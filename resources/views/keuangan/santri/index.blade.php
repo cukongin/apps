@@ -108,7 +108,7 @@
                                 <td class="px-6 py-4">
                                     <a href="{{ route('keuangan.santri.show', $s['id']) }}" class="flex items-center gap-3 hover:opacity-80 transition-opacity">
                                         @if($s['foto'])
-                                            <img src="{{ asset('storage/' . $s['foto']) }}" alt="" class="size-8 rounded-full object-cover border border-gray-200">
+                                            <img src="{{ asset($s['foto']) }}" alt="" class="size-8 rounded-full object-cover border border-gray-200">
                                         @else
                                             <div class="size-8 rounded-full bg-{{ $s['color'] }}/10 text-{{ $s['color'] }} flex items-center justify-center text-xs font-bold">{{ $s['initial'] }}</div>
                                         @endif

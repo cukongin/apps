@@ -15,7 +15,7 @@
         <div class="bg-white dark:bg-[#1a2e1d] rounded-xl shadow-sm border border-[#dbe6dd] dark:border-[#2a3a2d] p-6 mb-8">
             <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-6">
                 <div class="flex gap-6 items-center">
-                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-24 w-24 border-4 border-primary/20" style='background-image: url("{{ $santri->foto ? asset("storage/" . $santri->foto) : "https://ui-avatars.com/api/?name=" . urlencode($santri->nama) . "&background=random" }}");'>
+                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full h-24 w-24 border-4 border-primary/20" style='background-image: url("{{ $santri->foto ? asset($santri->foto) : "https://ui-avatars.com/api/?name=" . urlencode($santri->nama) . "&background=random" }}");'>
                     </div>
                     <div class="flex flex-col justify-center">
                         <h1 class="text-[#111812] dark:text-white text-2xl font-extrabold tracking-tight">{{ $santri->nama }}</h1>
