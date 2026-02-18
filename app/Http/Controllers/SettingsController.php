@@ -1258,7 +1258,7 @@ class SettingsController extends Controller
             // exec() is disabled on Hostinger, but proc_open is active.
 
             // 1. Git Pull (Force Reset to Match Repo)
-            $process = \Symfony\Component\Process\Process::fromShellCommandline('git fetch origin master && git reset --hard origin/master');
+            $process = \Symfony\Component\Process\Process::fromShellCommandline('git fetch origin main && git reset --hard origin/main');
             $process->setWorkingDirectory(base_path()); // Ensure we are in project root
             $process->run();
 
