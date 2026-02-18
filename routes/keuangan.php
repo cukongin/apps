@@ -19,6 +19,8 @@ use App\Keuangan\Http\Controllers\LaporanController;
 use App\Keuangan\Http\Controllers\LaporanHarianController;
 use App\Keuangan\Http\Controllers\TabunganController;
 use App\Keuangan\Http\Controllers\KenaikanKelasController;
+use App\Keuangan\Http\Controllers\KelasController;
+use App\Keuangan\Http\Controllers\SimulationController;
 
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\MaintenanceController;
@@ -83,6 +85,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/biaya-lain/{id}/toggle-status', [BiayaLainController::class, 'toggleStatus'])->name('biaya-lain.toggle-status');
         Route::resource('biaya-lain', BiayaLainController::class);
 
+        // Master Data Keuangan
+        Route::get('/kelas', [KelasController::class, 'index'])->name('kelas.index');
+        Route::get('/kelas/create', [KelasController::class, 'create'])->name('kelas.create');
+        Route::post('/kelas', [KelasController::class, 'store'])->name('kelas.store');
+        Route::get('/kelas/{id}/edit', [KelasController::class, 'edit'])->name('kelas.edit');
+        Route::put('/kelas/{id}', [KelasController::class, 'update'])->name('kelas.update');
+        Route::get('/kelas/{id}/delete', [KelasController::class, 'destroy'])->name('kelas.destroy'); // Using GET for delete link compatibility
+        Route::post('/kelas/bulk-generate', [KelasController::class, 'bulkGenerate'])->name('kelas.bulk-generate');
+
         Route::post('keringanan/{keringanan}/members', [KeringananController::class, 'addMember'])->name('keringanan.members.add');
         Route::delete('keringanan/{keringanan}/members/{santri}', [KeringananController::class, 'removeMember'])->name('keringanan.members.remove');
         Route::resource('keringanan', KeringananController::class);
@@ -107,6 +118,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/tabungan', [TabunganController::class, 'index'])->name('tabungan.index');
         Route::get('/tabungan/{id}', [TabunganController::class, 'show'])->name('tabungan.show');
         Route::post('/tabungan/{id}', [TabunganController::class, 'store'])->name('tabungan.store');
+    });
+
+    // --- SIMULATION ---
+    Route::middleware(['role:admin_utama,bendahara,kepala_madrasah'])->group(function () {
+        Route::get('/simulation', [SimulationController::class, 'index'])->name('simulation.index');
+        Route::post('/simulation/run', [SimulationController::class, 'run'])->name('simulation.run');
+        Route::post('/simulation/reset', [SimulationController::class, 'reset'])->name('simulation.reset');
     });
 
     // --- ADMIN ONLY ---

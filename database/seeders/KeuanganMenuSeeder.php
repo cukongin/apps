@@ -151,7 +151,7 @@ class KeuanganMenuSeeder extends Seeder
                 ['route' => 'keuangan.keringanan.index', 'parent_id' => $masterParent->id],
                 ['title' => 'Manajemen Keringanan', 'icon' => 'percent', 'order' => 4, 'is_active' => true, 'location' => 'sidebar']
             );
-             $dataKelas = DynamicMenu::firstOrCreate(
+            $dataKelas = DynamicMenu::firstOrCreate(
                 ['route' => 'keuangan.kelas.index', 'parent_id' => $masterParent->id],
                 ['title' => 'Atur Tarif per Kelas', 'icon' => 'class', 'order' => 5, 'is_active' => true, 'location' => 'sidebar']
             );

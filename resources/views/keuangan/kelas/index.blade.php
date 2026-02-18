@@ -39,10 +39,6 @@
                         </button>
                     </div>
 
-                    <a href="{{ route('keuangan.kelas.create') }}" class="flex items-center justify-center rounded-xl h-10 px-4 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/20 hover:brightness-110 transition-all">
-                        <span class="material-symbols-outlined text-base mr-2">add_circle</span>
-                        Tambah Kelas
-                    </a>
                 </div>
             </div>
 
@@ -80,7 +76,7 @@
                                 <th class="px-6 py-3">Nama Kelas</th>
                                 <th class="px-6 py-3">Wali Kelas</th>
                                 <th class="px-6 py-3 text-right">Jumlah</th>
-                                <th class="px-6 py-3 text-right">Aksi</th>
+                                <th class="px-6 py-3 text-right">Jumlah</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#dbe0e6] dark:divide-[#2a452e]">
@@ -92,22 +88,6 @@
                                 <td class="px-6 py-3 font-bold text-sm text-[#111418] dark:text-white">{{ $kelas['nama'] }}</td>
                                 <td class="px-6 py-3 text-sm text-[#617589] dark:text-[#a0c2a7]">{{ $kelas['wali'] }}</td>
                                 <td class="px-6 py-3 text-sm text-right font-mono">{{ $kelas['jumlah'] }}</td>
-                                <td class="px-6 py-3 text-right">
-                                    <div class="flex justify-end gap-1">
-                                        <a href="{{ route('keuangan.kelas.edit', $kelas['id']) }}" class="p-1 hover:bg-orange-50 hover:text-orange-500 rounded transition-colors" title="Edit Kelas">
-                                            <span class="material-symbols-outlined text-[18px]">edit</span>
-                                        </a>
-                                        <!-- Can't nest forms, so use separate delete button outside or JS?
-                                             Since we wrapped main in form, standard delete form will break nested form rules.
-                                             FIX: Move delete form outside or use button type submit name="action" value="delete" (complex).
-                                             BETTER: Keep Delete as Link to GET -> Confirm -> DELETE (Laravel doesn't support GET delete).
-                                             WORKAROUND: Use JS to submit a hidden delete form outside.
-                                        -->
-                                        <button type="button" onclick="confirmDelete('{{ route('keuangan.kelas.destroy', $kelas['id']) }}')" class="p-1 hover:bg-red-50 hover:text-red-500 rounded transition-colors" title="Hapus Kelas">
-                                            <span class="material-symbols-outlined text-[18px]">delete</span>
-                                        </button>
-                                    </div>
-                                </td>
                             </tr>
                             @endforeach
                         </tbody>
