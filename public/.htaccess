@@ -16,6 +16,32 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # --- SUPER BOSS SECURITY START ---
+
+    # 1. Force HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+    # 2. Block Bad Bots & Scanners
+    RewriteCond %{HTTP_USER_AGENT} (libwww-perl|wget|python|nikto|curl|scan|java|winhttp|clshttp|loader) [NC,OR]
+    RewriteCond %{HTTP_USER_AGENT} (<|>|'|%0A|%0D|%27|%3C|%3E|%00) [NC]
+    RewriteRule .* - [F,L]
+
+    # 3. Disable Directory Browsing
+    Options -Indexes
+
+    # 4. Block Access to Sensitive Files (Double Check)
+    <FilesMatch "^\.(env|git|composer|lock|json|yml|xml|log)$">
+        Order allow,deny
+        Deny from all
+    </FilesMatch>
+
+    # 5. Prevent PHP Execution in Uploads (If inside public)
+    # Note: Requires specific folder rules usually, but we can try generic
+    # RewriteRule ^uploads/.*\.php$ - [F,L]
+
+    # --- SUPER BOSS SECURITY END ---
+
     # Send Requests To Front Controller...
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
