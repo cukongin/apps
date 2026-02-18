@@ -159,6 +159,9 @@
                                         <span class="material-symbols-outlined text-[18px]">restore_from_trash</span>
                                     </button>
                                     @endif
+                                    <button type="button" onclick="openStatusModal({{ $student->id }}, '{{ addslashes($student->nama) }}')" class="p-2 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-orange-500 transition-colors" title="Ubah Status (Keluar/Pindah/dll)">
+                                        <span class="material-symbols-outlined text-[18px]">input</span>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -281,11 +284,12 @@ function restoreStudent(id) {
                     <label class="block text-sm font-medium leading-6 text-slate-900 dark:text-white mb-1">Pilih Status Baru</label>
                     <select name="status" required class="block w-full rounded-md border-0 py-1.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 focus:ring-2 focus:ring-inset focus:ring-amber-500 sm:text-sm sm:leading-6">
                         <option value="">-- Pilih Status --</option>
-                        <option value="active">Aktif (Batalkan Keluar)</option>
-                        <option value="mutasi">Mutasi (Pindah Sekolah)</option>
-                        <option value="keluar">Keluar (Drop Out / Berhenti)</option>
-                        <option value="lulus">Lulus (Alumni)</option>
+                        <option value="aktif">Aktif (Batalkan Keluar)</option>
+                        <option value="mutasi">Pindah Sekolah (Mutasi)</option>
+                        <option value="keluar">Berhenti / Drop Out</option>
                         <option value="meninggal">Meninggal Dunia</option>
+                        <option value="tanpa_keterangan">Tanpa Keterangan (Kabur)</option>
+                        <option value="lulus">Lulus (Alumni)</option>
                     </select>
                 </div>
 

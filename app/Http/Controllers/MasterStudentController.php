@@ -204,7 +204,7 @@ class MasterStudentController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|in:aktif,lulus,mutasi,keluar,non-aktif',
+            'status' => 'required|in:aktif,lulus,mutasi,keluar,non-aktif,meninggal,tanpa_keterangan',
             'catatan' => 'nullable|string'
         ]);
 
