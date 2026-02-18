@@ -49,4 +49,17 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
         return redirect()->route('login');
     }
+    // Honeypot Trap Handler
+    public function honeyPot(Request $request) {
+        $ip = $request->ip();
+        $userAgent = $request->userAgent();
+
+        // Log the intrusion
+        \App\Models\AuditLog::log('INTRUSION_ATTEMPT', 'Honeypot Trap', "Bot detected at {$request->path()} from IP: {$ip}. UA: {$userAgent}");
+
+        // You could add logic here to blacklist the IP in a cache or DB
+        // For now, just return a Forbidden response with a scary message or just blank
+
+        abort(403, 'Access Denied: Your IP has been flagged for suspicious activity.');
+    }
 }

@@ -26,6 +26,10 @@ use App\Http\Controllers\TemplateController;
 use App\Http\Controllers\SettingsController;
 
 // Auth Routes (Public)
+// Honeypot Traps (Catch Bots)
+Route::get('/wp-admin', [AuthController::class, 'honeyPot'])->name('trap.wp');
+Route::get('/admin/login', [AuthController::class, 'honeyPot'])->name('trap.admin');
+Route::get('/administrator', [AuthController::class, 'honeyPot'])->name('trap.administrator');
 // Auth Routes (Public)
 // 1. Code Login (Primary)
 use App\Http\Controllers\LoginCodeController;
