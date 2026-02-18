@@ -65,18 +65,22 @@ class BackupController extends Controller
             // On Windows (XAMPP), mysqldump might not be in PATH globally.
             // Try explicit path if default fails, but for now assume PATH or relative to XAMPP.
             // Since environment is XAMPP, let's try generic first.
-            
+
             // Note: Password argument syntax is -pPASSWORD (no space)
             $passwordPart = $dbPass ? "-p\"$dbPass\"" : "";
-            
+
             // Use --routines to include procedures/functions if any
             // Use --routines to include procedures/functions if any
             // Check for mysqldump path
-            $dumpPath = 'c:\xampp\mysql\bin\mysqldump.exe';
+            // Priority: D:\XAMPP (User System), C:\xampp (Default), PATH
+            $dumpPath = 'd:\xampp\mysql\bin\mysqldump.exe';
             if (!file_exists($dumpPath)) {
-                $dumpPath = 'mysqldump'; 
+                $dumpPath = 'c:\xampp\mysql\bin\mysqldump.exe';
             }
-            
+            if (!file_exists($dumpPath)) {
+                $dumpPath = 'mysqldump';
+            }
+
             // Use --routines to include procedures/functions if any
             // Use --add-drop-table to ensure restore works on existing DB
             // Use --hex-blob to handle binary data safely
@@ -138,10 +142,13 @@ class BackupController extends Controller
             $dbHost = env('DB_HOST', '127.0.0.1');
 
             $passwordPart = $dbPass ? "-p\"$dbPass\"" : "";
-            
+
             // Restore Command
             // Try explicit XAMPP path first, then fallback to global
-            $mysqlPath = 'c:\xampp\mysql\bin\mysql.exe';
+            $mysqlPath = 'd:\xampp\mysql\bin\mysql.exe';
+            if (!file_exists($mysqlPath)) {
+                $mysqlPath = 'c:\xampp\mysql\bin\mysql.exe';
+            }
             if (!file_exists($mysqlPath)) {
                 $mysqlPath = 'mysql'; // Fallback to PATH
             }
@@ -157,7 +164,7 @@ class BackupController extends Controller
                 // Clear cache after restore to ensure new data reflects immediately
                 \Illuminate\Support\Facades\Artisan::call('cache:clear');
                 \Illuminate\Support\Facades\Artisan::call('view:clear');
-                
+
                 return back()->with('success', 'Database berhasil di-restore! Silakan login ulang jika diperlukan.');
             } else {
                 \Illuminate\Support\Facades\Log::error("Restore Failed. Code: $resultCode. Command: $command. Output: " . implode("\n", $output));
@@ -168,7 +175,7 @@ class BackupController extends Controller
             return back()->with('error', 'Terjadi kesalahan saat restore: ' . $e->getMessage());
         }
     }
-    
+
     // Internal Helper for Restore from Existing File (Settings Page)
     public function restoreFromLocal($filename)
     {
@@ -176,7 +183,7 @@ class BackupController extends Controller
          if (!file_exists($path)) {
              return back()->with('error', 'File tidak ditemukan di server.');
          }
-         
+
          // Database configuration
          $dbName = env('DB_DATABASE');
          $dbUser = env('DB_USERNAME');
@@ -184,13 +191,16 @@ class BackupController extends Controller
          $dbHost = env('DB_HOST', '127.0.0.1');
 
          $passwordPart = $dbPass ? "-p\"$dbPass\"" : "";
-         
+
          // Check for mysql path
-         $mysqlPath = 'c:\xampp\mysql\bin\mysql.exe';
+         $mysqlPath = 'd:\xampp\mysql\bin\mysql.exe';
          if (!file_exists($mysqlPath)) {
-             $mysqlPath = 'mysql'; 
+             $mysqlPath = 'c:\xampp\mysql\bin\mysql.exe';
          }
-         
+         if (!file_exists($mysqlPath)) {
+             $mysqlPath = 'mysql';
+         }
+
          // Restore Command
          $command = "\"$mysqlPath\" --default-character-set=utf8 -u $dbUser $passwordPart -h $dbHost --max_allowed_packet=512M $dbName < \"$path\" 2>&1";
 
