@@ -36,3 +36,8 @@ diagnose_*.php
 /docs
 MASTER_BLUEPRINT.md
 deployment_guide.md
+
+# Desktop App Bundles
+/bin
+/desktop/Output
+.env.desktop
