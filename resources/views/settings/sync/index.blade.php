@@ -23,7 +23,7 @@
         </div>
 
         {{-- Data Summary Table --}}
-        @if(session('sync_summary') || session('smart_sync_summary'))
+        @if(session()->has('sync_summary') || session()->has('smart_sync_summary'))
         <div class="card-boss !p-0 overflow-hidden mt-4 mb-6 animate-fade-in-up">
             <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
                 <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
