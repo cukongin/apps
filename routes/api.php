@@ -24,4 +24,8 @@ Route::middleware(\App\Http\Middleware\EnsureSyncToken::class)->prefix('sync')->
     Route::get('/academic-data', [\App\Http\Controllers\Api\SyncController::class, 'pullAcademicData']);
     Route::get('/finance-data', [\App\Http\Controllers\Api\SyncController::class, 'pullFinanceData']);
     Route::post('/finance-push', [\App\Http\Controllers\Api\SyncController::class, 'receiveFinancePush']);
+
+    // FULL SYNC ROUTES
+    Route::get('/full-database', [\App\Http\Controllers\Api\SyncController::class, 'pullFullDatabase']);
+    Route::post('/full-push', [\App\Http\Controllers\Api\SyncController::class, 'receiveFullPush']);
 });

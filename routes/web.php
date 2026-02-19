@@ -160,8 +160,8 @@ Route::middleware(['auth'])->group(function () {
 
         // SYNC CLIENT ROUTE
         Route::get('settings/sync', [App\Http\Controllers\SyncClientController::class, 'index'])->name('settings.sync.index');
-        Route::post('settings/sync/pull', [App\Http\Controllers\SyncClientController::class, 'pullData'])->name('settings.sync.pull');
-        Route::post('settings/sync/push', [App\Http\Controllers\SyncClientController::class, 'pushFinanceData'])->name('settings.sync.push');
+        Route::post('settings/sync/pull', [App\Http\Controllers\SyncClientController::class, 'pullFullData'])->name('settings.sync.pull');
+        Route::post('settings/sync/push', [App\Http\Controllers\SyncClientController::class, 'pushFullData'])->name('settings.sync.push');
 
         // Class Management (Moved here for Security)
         Route::get('/classes', [ClassroomController::class, 'index'])->name('classes.index');

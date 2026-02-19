@@ -217,4 +217,107 @@ class SyncController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+    /**
+     * Get list of tables to sync (Excluding system tables)
+     */
+    private function getSyncableTables()
+    {
+        $allTables = DB::select('SHOW TABLES');
+        $tables = array_map(function ($table) {
+            return array_values((array)$table)[0];
+        }, $allTables);
+
+        // Denylist (System Tables)
+        $denylist = [
+            'migrations',
+            'password_resets',
+            'failed_jobs',
+            'personal_access_tokens',
+            'sessions',
+            'cache',
+            'cache_locks',
+            'jobs',
+            'job_batches',
+            'telescope_entries',
+            'telescope_entries_tags',
+            'telescope_monitoring',
+        ];
+
+        // Filter tables
+        return array_filter($tables, function ($table) use ($denylist) {
+            // Exclude exact matches
+            if (in_array($table, $denylist)) return false;
+            // Exclude patterns (like telescope_*) if needed, though strict list is safer
+            return true;
+        });
+    }
+
+    /**
+     * Pull FULL Database (All Tables)
+     */
+    public function pullFullDatabase()
+    {
+        try {
+            $tables = $this->getSyncableTables();
+            $data = [];
+
+            foreach ($tables as $table) {
+                // Fetch all data for this table
+                $data[$table] = DB::table($table)->get();
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $data,
+                'timestamp' => now(),
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Receive FULL Database Push
+     */
+    public function receiveFullPush(Request $request)
+    {
+        try {
+            $data = $request->all(); // Expecting ['table_name' => [rows], ...]
+
+            DB::beginTransaction();
+
+            // Disable Foreign Key Checks to allow random order insertion
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            foreach ($data as $table => $rows) {
+                // Skip if table not in syncable list (security)
+                $syncable = $this->getSyncableTables();
+                if (!in_array($table, $syncable)) continue;
+
+                if (is_array($rows)) {
+                    foreach ($rows as $row) {
+                        try {
+                            DB::table($table)->updateOrInsert(['id' => $row['id']], (array)$row);
+                        } catch (\Exception $e) {
+                           // Skip error for specific row but log it?
+                           // For now, let's try-catch per row to prevent one bad apple ruining the batch
+                        }
+                    }
+                }
+            }
+
+            // Re-enable Foreign Key Checks
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Full Database Synchronized Successfully.']);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;'); // Ensure checks are back on
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }

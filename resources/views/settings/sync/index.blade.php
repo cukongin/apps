@@ -120,7 +120,7 @@
                         @csrf
                         <button type="submit" class="btn-boss btn-primary w-full md:w-auto" data-confirm-html="Ini akan <b>menimpa data lokal</b> dengan data terbaru dari server online.<br>Lanjutkan?">
                             <span class="material-symbols-outlined">download</span>
-                            Tarik Data Sekarang
+                            Tarik FULL DATABASE Sekarang
                         </button>
                     </form>
 
@@ -129,9 +129,9 @@
                         <p class="text-xs text-slate-500 mb-2">Pusat Data: Laptop (Kirim data offline ke server)</p>
                         <form action="{{ route('settings.sync.push') }}" method="POST">
                             @csrf
-                            <button type="submit" class="btn-boss btn-secondary w-full md:w-auto" data-confirm-html="Ini akan <b>mengirim semua data keuangan</b> dari laptop ini ke server online.<br>Pastikan internet stabil.">
+                            <button type="submit" class="btn-boss btn-secondary w-full md:w-auto" data-confirm-html="Ini akan <b>mengirim SELURUH DATABASE</b> dari laptop ini ke server online.<br>Pastikan internet stabil.">
                                 <span class="material-symbols-outlined">upload</span>
-                                Kirim Data ke Server
+                                Kirim FULL DATABASE ke Server
                             </button>
                         </form>
                     </div>
@@ -144,10 +144,11 @@
     <div class="card-boss !p-6">
         <h3 class="font-bold text-lg mb-4 text-slate-800 dark:text-white">Panduan Sinkronisasi</h3>
         <ul class="list-disc list-inside space-y-2 text-slate-600 dark:text-slate-400 text-sm">
-            <li>Sinkronisasi ini bersifat <strong>Satu Arah (Online ke Offline)</strong>.</li>
-            <li>Data yang ditarik meliputi: <strong>Siswa, Guru, Kelas, Mapel, dan Nilai/Absensi</strong>.</li>
-            <li>Data di laptop ini akan diperbarui sesuai data di server. Data lokal yang tidak ada di server <strong>tidak akan dihapus</strong> (hanya update/insert).</li>
-            <li>Gunakan fitur ini secara berkala, misalnya seminggu sekali atau saat musim ujian.</li>
+            <li><strong>MODE: FULL DATABASE SYNC (Satu Database Utuh).</strong></li>
+            <li>Sistem akan menyamakan <strong>SEMUA TABEL</strong> (Kecuali tabel sistem) antara Offline dan Online.</li>
+            <li><strong>Tarik Data (Pull):</strong> Mengambil semua data dari Server Online ke Laptop ini.</li>
+            <li><strong>Kirim Data (Push):</strong> Mengirim semua data dari Laptop ini ke Server Online.</li>
+            <li>Proses ini mungkin memakan waktu tergantung kecepatan internet dan besarnya data.</li>
         </ul>
     </div>
 </div>

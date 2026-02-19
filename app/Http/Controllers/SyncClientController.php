@@ -287,4 +287,131 @@ class SyncClientController extends Controller
             return redirect()->back()->with('error', 'Error: Gagal Push: ' . $e->getMessage());
         }
     }
+    /**
+     * Get list of tables to sync (Excluding system tables) - Client Side
+     */
+    private function getSyncableTables()
+    {
+        $allTables = DB::select('SHOW TABLES');
+        $tables = array_map(function ($table) {
+            return array_values((array)$table)[0];
+        }, $allTables);
+
+        // Denylist (System Tables)
+        $denylist = [
+            'migrations',
+            'password_resets',
+            'failed_jobs',
+            'personal_access_tokens',
+            'sessions',
+            'cache',
+            'cache_locks',
+            'jobs',
+            'job_batches',
+            'telescope_entries',
+            'telescope_entries_tags',
+            'telescope_monitoring',
+        ];
+
+        // Filter tables
+        return array_filter($tables, function ($table) use ($denylist) {
+            if (in_array($table, $denylist)) return false;
+            return true;
+        });
+    }
+
+    /**
+     * Pull FULL Database (Client -> Server)
+     */
+    public function pullFullData(Request $request)
+    {
+        $baseUrl = config('app.sync_base_url', env('SYNC_BASE_URL'));
+        $token = config('app.sync_token', env('SYNC_TOKEN'));
+
+        if (!$baseUrl || !$token) {
+            return redirect()->back()->with('error', 'Gagal: URL Server atau Token belum dikonfigurasi!');
+        }
+
+        try {
+            // Request Full Data
+            $response = Http::timeout(300) // Increase timeout for large data
+                            ->withHeaders(['X-Sync-Token' => $token])
+                            ->get($baseUrl . '/api/sync/full-database');
+
+            if ($response->failed()) {
+                throw new \Exception('Server Error: ' . Str::limit(strip_tags($response->body()), 150));
+            }
+
+            $data = $response->json('data'); // ['table_name' => [rows], ...]
+
+            DB::beginTransaction();
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+            $summary = [];
+
+            foreach ($data as $table => $rows) {
+                if (is_array($rows)) {
+                    foreach ($rows as $row) {
+                        try {
+                            DB::table($table)->updateOrInsert(['id' => $row['id']], (array)$row);
+                        } catch (\Exception $e) {
+                             // Log specific row error but continue
+                             Log::warning("Sync Row Error in $table: " . $e->getMessage());
+                        }
+                    }
+                    $summary[$table] = count($rows);
+                }
+            }
+
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            DB::commit();
+
+            return redirect()->back()->with('success', 'Berhasil: Sinkronisasi FULL DATABASE Selesai!')->with('sync_summary', $summary);
+
+        } catch (\Exception $e) {
+             DB::rollBack();
+             DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+             return redirect()->back()->with('error', 'Error Full Sync: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Push FULL Database (Client -> Server)
+     */
+    public function pushFullData(Request $request)
+    {
+        $baseUrl = config('app.sync_base_url', env('SYNC_BASE_URL'));
+        $token = config('app.sync_token', env('SYNC_TOKEN'));
+
+        if (!$baseUrl || !$token) {
+            return redirect()->back()->with('error', 'Gagal: URL Server atau Token belum dikonfigurasi!');
+        }
+
+        try {
+            // 1. Gather ALL Local Data
+            $tables = $this->getSyncableTables();
+            $payload = [];
+            $summary = [];
+
+            foreach ($tables as $table) {
+                $rows = DB::table($table)->get()->toArray();
+                $payload[$table] = $rows;
+                $summary[$table] = count($rows);
+            }
+
+            // 2. Send to Server
+            $response = Http::timeout(300)
+                            ->withHeaders(['X-Sync-Token' => $token])
+                            ->post($baseUrl . '/api/sync/full-push', $payload);
+
+            if ($response->successful()) {
+                return redirect()->back()->with('success', 'Berhasil: Kirim FULL DATABASE ke Server Selesai!')->with('sync_summary', $summary);
+            } else {
+                throw new \Exception('Gagal push: ' . $response->body());
+            }
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error Push Full: ' . $e->getMessage());
+        }
+    }
 }
