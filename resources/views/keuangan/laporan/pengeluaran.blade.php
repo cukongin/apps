@@ -274,22 +274,22 @@
 
         <!-- Grid Responsive: 1 col mobile, 3 tablet, 4 desktop. Print: 2 cols fixed -->
         <div class="bg-white dark:bg-[#1a2e1d] rounded-xl shadow-sm border border-[#dbe6dd] dark:border-[#2a3a2d] p-6 print:border-none print:shadow-none print:p-0">
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 print:grid-cols-2 gap-6 print:gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 print:grid-cols-2 gap-6 print:gap-2">
             @foreach($groupedPengeluarans as $category => $items)
                 @foreach($items as $item)
                     @if($item->bukti_foto)
-                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid">
+                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:h-[11.5cm]">
                             <!-- Image Container -->
-                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-[400px]">
+                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-full print:w-full">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
                                      onload="rotateIfLandscape(this)"
-                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center"
+                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center min-w-full min-h-full print:object-contain"
                                      alt="Struk">
                             </div>
 
                             <!-- Keterangan -->
-                            <div class="text-xs border-t border-gray-100 print:border-black pt-2 bg-white z-10">
-                                <div class="font-bold text-sm truncate text-[#111812]">{{ $item->judul }}</div>
+                            <div class="text-xs border-t border-gray-100 print:border-black pt-1 bg-white z-10 print:text-[10pt]">
+                                <div class="font-bold text-sm truncate text-[#111812] print:text-black">{{ $item->judul }}</div>
                                 <div class="flex justify-between mt-1 text-gray-600 print:text-black font-medium">
                                     <span>{{ \Carbon\Carbon::parse($item->tanggal_pengeluaran)->format('d M Y') }}</span>
                                     <span class="font-bold text-[#111812] print:text-black">Rp {{ number_format($item->jumlah, 0, ',', '.') }}</span>
