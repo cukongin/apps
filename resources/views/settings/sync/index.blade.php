@@ -12,18 +12,68 @@
         </div>
     </div>
 
-    <!-- Alerts -->
-    @if(session('success'))
-        <div class="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
-            <strong class="font-bold">Sukses!</strong>
-            <span class="block sm:inline">{{ session('success') }}</span>
+    {{-- Alert Block --}}
+    @if (session('success'))
+        <div class="p-4 bg-emerald-100 border border-emerald-400 text-emerald-700 rounded-lg flex items-start gap-3 shadow-sm">
+            <span class="material-symbols-outlined filled text-emerald-600">check_circle</span>
+            <div>
+                <strong class="font-bold block">Sukses!</strong>
+                <span class="text-sm">{{ session('success') }}</span>
+            </div>
         </div>
+
+        {{-- Data Summary Table --}}
+        @if(session('sync_summary'))
+        <div class="card-boss !p-0 overflow-hidden mt-4 mb-6 animate-fade-in-up">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
+                <h4 class="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">analytics</span>
+                    Ringkasan Data
+                </h4>
+                <span class="text-xs font-bold px-2 py-1 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500">
+                    {{ now()->format('d M Y H:i') }}
+                </span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-50/50 dark:bg-slate-700/20 border-b border-slate-100 dark:border-slate-700">
+                            <th class="px-6 py-3">Jenis Data</th>
+                            <th class="px-6 py-3 text-right">Jumlah</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
+                        @foreach(session('sync_summary') as $key => $count)
+                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                            <td class="px-6 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <div class="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-primary transition-colors"></div>
+                                {{ $key }}
+                            </td>
+                            <td class="px-6 py-3 text-sm text-right">
+                                <span class="inline-flex items-center justify-center min-w-[30px] px-2 py-0.5 rounded-full text-xs font-bold {{ $count > 0 ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:border-slate-700' }}">
+                                    {{ $count }}
+                                </span>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 text-center">
+                Data di atas telah berhasil diproses oleh sistem.
+            </div>
+        </div>
+        @endif
     @endif
 
-    @if(session('error'))
-        <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg break-words">
-            <strong class="font-bold">Gagal!</strong>
-            <span class="block sm:inline text-sm font-mono mt-1">{{ session('error') }}</span>
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible show fade">
+            <div class="alert-body">
+                <button class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+                <b>Gagal:</b> {{ session('error') }}
+            </div>
         </div>
     @endif
 

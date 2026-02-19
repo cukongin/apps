@@ -200,7 +200,37 @@ class SyncClientController extends Controller
                 foreach ($finData['tabungan'] as $item) DB::table('tabungans')->updateOrInsert(['id' => $item['id']], (array)$item);
             }
 
-            return redirect()->back()->with('success', 'Berhasil: Sinkronisasi Lengkap (Akademik & Keuangan) Selesai!');
+            // 4. Prepare Summary Data for UI
+            $summary = [
+                'Users' => count($data['users'] ?? []),
+                'Jenjang' => count($data['jenjang'] ?? []),
+                'Tahun Ajaran' => count($data['tahun_ajaran'] ?? []),
+                'Periode (Semester)' => count($data['semester'] ?? []), // 'semester' key from server contains Periode data
+                'Guru' => count($data['guru'] ?? []),
+                'Mapel' => count($data['mapel'] ?? []),
+                'Kelas' => count($data['kelas'] ?? []),
+                'Siswa' => count($data['siswa'] ?? []),
+            ];
+
+            if (isset($acData)) {
+                $summary['Nilai Siswa'] = count($acData['nilai'] ?? []);
+                $summary['Catatan Kehadiran'] = count($acData['absensi'] ?? []);
+                $summary['Catatan Wali Kelas'] = count($acData['catatan'] ?? []);
+                $summary['Nilai Ekstrakurikuler'] = count($acData['nilai_ekskul'] ?? []);
+            }
+
+            if (isset($finData)) {
+                $summary['Jenis Biaya'] = count($finData['jenis_biaya'] ?? []) + count($finData['pos_bayar'] ?? []) + count($finData['jenis_bayar'] ?? []);
+                $summary['Kategori Pemasukan'] = count($finData['kategori_pemasukan'] ?? []);
+                $summary['Kategori Pengeluaran'] = count($finData['kategori_pengeluaran'] ?? []);
+                $summary['Tagihan'] = count($finData['tagihan'] ?? []);
+                $summary['Transaksi'] = count($finData['transaksi'] ?? []);
+                $summary['Pemasukan Lain'] = count($finData['pemasukan_lain'] ?? []);
+                $summary['Pengeluaran Lain'] = count($finData['pengeluaran_lain'] ?? []);
+                $summary['Tabungan'] = count($finData['tabungan'] ?? []);
+            }
+
+            return redirect()->back()->with('success', 'Berhasil: Sinkronisasi Lengkap Selesai!')->with('sync_summary', $summary);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -239,7 +269,14 @@ class SyncClientController extends Controller
                             ->post($baseUrl . '/api/sync/finance-push', $payload);
 
             if ($response->successful()) {
-                return redirect()->back()->with('success', 'Berhasil: Data Keuangan Berhasil Dikirim ke Server!');
+                $summary = [
+                    'Tagihan' => count($payload['tagihan']),
+                    'Transaksi' => count($payload['transaksi']),
+                    'Pemasukan Lain' => count($payload['pemasukan_lain']),
+                    'Pengeluaran Lain' => count($payload['pengeluaran_lain']),
+                    'Tabungan' => count($payload['tabungan']),
+                ];
+                return redirect()->back()->with('success', 'Berhasil: Data Keuangan Berhasil Dikirim ke Server!')->with('sync_summary', $summary);
             } else {
                 throw new \Exception('Gagal kirim: ' . $response->body());
             }
