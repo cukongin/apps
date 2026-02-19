@@ -273,7 +273,8 @@
         </div>
 
         <!-- Grid Responsive: 1 col mobile, 3 tablet, 4 desktop. Print: 2 cols fixed -->
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 print:grid-cols-2 gap-6 print:gap-4 print:px-0">
+        <div class="bg-white dark:bg-[#1a2e1d] rounded-xl shadow-sm border border-[#dbe6dd] dark:border-[#2a3a2d] p-6 print:border-none print:shadow-none print:p-0">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 print:grid-cols-2 gap-6 print:gap-4">
             @foreach($groupedPengeluarans as $category => $items)
                 @foreach($items as $item)
                     @if($item->bukti_foto)
@@ -300,6 +301,8 @@
             @endforeach
         </div>
     </div>
+    </div>
+
 
     <script>
         function rotateIfLandscape(img) {
