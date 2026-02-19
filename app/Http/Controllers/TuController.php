@@ -298,41 +298,17 @@ class TuController extends Controller
 
     public function showDknSimple(Kelas $kelas)
     {
-        $students = $kelas->anggota_kelas()->with('siswa')->get();
-        $studentIds = $students->pluck('id_siswa');
+        // Use Service (Standardized Logic)
+        $data = $this->dknService->getDknData($kelas);
 
-        // Fetch Grades (Optimized)
-        $allGrades = NilaiSiswa::whereIn('id_siswa', $studentIds)->get();
+        $dknData = $data['dknData'];
+        $mapels = $data['mapels'];
 
-        // Mapels
-        $currentMapelIds = \App\Models\PengajarMapel::where('id_kelas', $kelas->id)->pluck('id_mapel');
-        $mapels = Mapel::whereIn('id', $currentMapelIds)->orderBy('id', 'asc')->get();
-
-        // **NEW**: Fetch Saved Ijazah Grades
-        $ijazahGrades = \App\Models\NilaiIjazah::whereIn('id_siswa', $studentIds)->get(); // Collection
-
-        $dknData = [];
-
-        foreach ($students as $ak) {
-            $sGrades = $allGrades->where('id_siswa', $ak->id_siswa);
-            $sIjazah = $ijazahGrades->where('id_siswa', $ak->id_siswa); // Collection for this student
-
-            $jenjang = $kelas->jenjang->kode ?? ($kelas->tingkat_kelas <= 6 ? 'MI' : 'MTS');
-
-            // Dynamic Levels
-            $levelKey = ($jenjang === 'MTS') ? 'ijazah_range_mts' : 'ijazah_range_mi';
-            $defaultLevels = ($jenjang === 'MTS') ? '7,8,9' : '4,5,6';
-
-            $targetLevelsStr = \App\Models\GlobalSetting::val($levelKey, $defaultLevels);
-            $targetLevels = array_map('intval', explode(',', $targetLevelsStr));
-
-            $summary = $this->calculateSummary($sGrades, $mapels, $sIjazah, $jenjang, $targetLevels);
-
-            $dknData[] = [
-                'student' => $ak->siswa,
-                'summary' => $summary
-            ];
-        }
+        /*
+         * Manual fetching removed in favor of Service
+         * The service returns 'dknData' where each item has ['student', 'summary', 'data']
+         * This matches the structure expected by the stats calculation below.
+         */
 
         // --- Calculate Summary Stats (Mirroring IjazahController) ---
         $highestScore = 0; $highestStudent = '-';

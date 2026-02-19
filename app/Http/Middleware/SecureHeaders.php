@@ -25,7 +25,7 @@ class SecureHeaders
         }
 
         // Content Security Policy (CSP) - Allow Google Fonts, Analytics, etc.
-        $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://code.jquery.com https://cdnjs.cloudflare.com https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; img-src 'self' data: https://ui-avatars.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; connect-src 'self'; frame-src 'self' https://www.youtube.com; object-src 'none'; base-uri 'self'; form-action 'self';");
+        $response->headers->set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://code.jquery.com https://cdnjs.cloudflare.com https://www.googletagmanager.com https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://cdn.tailwindcss.com; img-src 'self' data: https://ui-avatars.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; connect-src 'self'; frame-src 'self' https://www.youtube.com; object-src 'none'; base-uri 'self'; form-action 'self';");
 
         // Permissions Policy (FKA Feature Policy)
         $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=(), payment=()');

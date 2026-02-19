@@ -62,12 +62,19 @@
                 <form action="{{ route('master.students.index') }}" method="GET" class="flex flex-1 md:justify-end gap-3 w-full md:w-auto">
                     <input type="hidden" name="tab" value="{{ request('tab', 'active') }}">
 
-                    <select name="level_id" onchange="this.form.submit()" class="input-boss w-auto">
-                        <option value="all">Semua Jenjang</option>
-                        @foreach($levels as $lvl)
-                        <option value="{{ $lvl->id }}" {{ request('level_id') == $lvl->id ? 'selected' : '' }}>{{ $lvl->nama }}</option>
-                        @endforeach
-                    </select>
+                    @if(isset($levels) && count($levels) > 1)
+                        <select name="level_id" onchange="this.form.submit()" class="input-boss w-auto">
+                            <option value="all">Semua Jenjang</option>
+                            @foreach($levels as $lvl)
+                            <option value="{{ $lvl->id }}" {{ request('level_id') == $lvl->id ? 'selected' : '' }}>{{ $lvl->nama }}</option>
+                            @endforeach
+                        </select>
+                    @elseif(isset($levels) && count($levels) == 1)
+                        <input type="hidden" name="level_id" value="{{ $levels->first()->id }}">
+                        <div class="px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 shadow-sm">
+                            {{ $levels->first()->nama }}
+                        </div>
+                    @endif
 
                     <div class="relative w-full md:w-64">
                          <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[18px]">search</span>

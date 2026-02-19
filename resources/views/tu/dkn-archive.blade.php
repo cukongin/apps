@@ -119,10 +119,17 @@
 
                                     // Suffix
                                     $lvlSuffix = ($jenjang === 'MTS') ? (' ' . $jenjang) : '';
+
+                                    // Period Label Logic (Match Excel)
+                                    if ($periodLabel == 'Smt' || $periodLabel == 'Semester') {
+                                        $pDisplay = ($period % 2 != 0) ? 'Ganjil' : 'Genap';
+                                    } else {
+                                        $pDisplay = $periodLabel . ' ' . $period;
+                                    }
                                 @endphp
 
                                 <td class="px-3 py-2 border-r border-slate-100 dark:border-slate-700 text-slate-500 text-xs whitespace-nowrap sticky left-[240px] bg-white dark:bg-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-800/80 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
-                                    <span class="font-bold text-primary">{{ $displayLvl }}{{ $lvlSuffix }}</span> <span class="text-slate-300 mx-1">|</span> {{ $periodLabel }} {{ $period }}
+                                    <span class="font-bold text-primary">{{ $displayLvl }}{{ $lvlSuffix }}</span> <span class="text-slate-300 mx-1">|</span> {{ $pDisplay }}
                                 </td>
 
                                 @foreach($mapels as $mapel)
@@ -278,10 +285,17 @@
 
                         // Suffix
                         $lvlSuffix = ($jenjang === 'MTS') ? (' ' . $jenjang) : '';
+
+                        // Period Label Logic (Match Excel)
+                        if ($periodLabel == 'Smt' || $periodLabel == 'Semester') {
+                            $pDisplay = ($period % 2 != 0) ? 'Ganjil' : 'Genap';
+                        } else {
+                            $pDisplay = $periodLabel . ' ' . $period;
+                        }
                     @endphp
 
                     <td class="px-2 py-1 border border-black text-primary font-bold text-[9px] whitespace-nowrap">
-                        {{ $displayLvl }}{{ $lvlSuffix }} | {{ $periodLabel }} {{ $period }}
+                        {{ $displayLvl }}{{ $lvlSuffix }} | {{ $pDisplay }}
                     </td>
 
                     @foreach($mapels as $mapel)

@@ -21,10 +21,10 @@
         <div class="flex flex-wrap items-center gap-3">
 
             <!-- Year Selector (Admin/TU) -->
-            @if(isset($years) && count($years) > 0)
+            @if(isset($years) && count($years) > 1)
             <form action="{{ route('reports.index') }}" method="GET">
                 <div class="relative group">
-                    <select name="year_id" class="input-boss !pl-10 !pr-8 py-2.5 min-w-[200px]" onchange="this.form.submit()">
+                    <select name="year_id" class="input-boss appearance-none !bg-none !pl-10 !pr-8 py-2.5 min-w-[200px]" onchange="this.form.submit()">
                         @foreach($years as $y)
                             <option value="{{ $y->id }}" {{ isset($selectedYear) && $selectedYear->id == $y->id ? 'selected' : '' }}>
                                 {{ $y->nama }} {{ $y->status == 'aktif' ? '(Aktif)' : '' }}
@@ -39,7 +39,13 @@
                     </div>
                 </div>
             </form>
+            @elseif(isset($years) && count($years) == 1)
+                <div class="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-700 bg-slate-100/50 border-2 border-slate-200 rounded-xl dark:bg-slate-800 dark:text-white dark:border-slate-700">
+                    <span class="material-symbols-outlined text-slate-400">calendar_month</span>
+                    {{ $years->first()->nama }}
+                </div>
             @endif
+
 
             <!-- Class Selector -->
             <form action="{{ route('reports.index') }}" method="GET" class="flex gap-2">
@@ -49,7 +55,7 @@
 
                 @if(count($classes) > 1)
                 <div class="relative group">
-                    <select name="class_id" class="input-boss !pl-10 !pr-8 py-2.5 min-w-[220px]" onchange="this.form.submit()">
+                    <select name="class_id" class="input-boss appearance-none !bg-none !pl-10 !pr-8 py-2.5 min-w-[220px]" onchange="this.form.submit()">
                         @foreach($classes as $c)
                             <option value="{{ $c->id }}" {{ isset($selectedClass) && $selectedClass->id == $c->id ? 'selected' : '' }}>
                                 {{ $c->nama_kelas }}

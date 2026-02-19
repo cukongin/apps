@@ -66,7 +66,7 @@
             <form action="{{ url()->current() }}" method="GET" class="flex flex-col md:flex-row w-full gap-3">
                  <!-- Jenjang Selector -->
                 <div class="relative group w-full md:w-auto">
-                    <select name="jenjang" class="input-boss !pl-9 !pr-8 w-full md:min-w-[100px]" onchange="this.form.submit()">
+                    <select name="jenjang" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[100px]" onchange="this.form.submit()">
                         @foreach(['MI', 'MTS'] as $j)
                             <option value="{{ $j }}" {{ (request('jenjang') == $j || (empty(request('jenjang')) && $loop->first)) ? 'selected' : '' }}>
                                 {{ $j }}
@@ -83,7 +83,7 @@
 
                 <!-- Class Selector -->
                 <div class="relative group w-full md:w-auto">
-                    <select name="kelas_id" class="input-boss !pl-9 !pr-8 w-full md:min-w-[200px]" onchange="this.form.submit()">
+                    <select name="kelas_id" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[200px]" onchange="this.form.submit()">
                         @if(isset($allClasses) && $allClasses->count() > 0)
                             @foreach($allClasses as $kls)
                                 <option value="{{ $kls->id }}" {{ isset($kelas) && $kelas->id == $kls->id ? 'selected' : '' }}>
@@ -104,7 +104,7 @@
 
                  <!-- Period Selector -->
                 <div class="relative group w-full md:w-auto">
-                    <select name="periode_id" class="input-boss !pl-9 !pr-8 w-full md:min-w-[200px]" onchange="this.form.submit()">
+                    <select name="periode_id" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[200px]" onchange="this.form.submit()">
                         @foreach($allPeriods as $p)
                             <option value="{{ $p->id }}" {{ $periode->id == $p->id ? 'selected' : '' }}>
                                 {{ $p->nama_periode }}

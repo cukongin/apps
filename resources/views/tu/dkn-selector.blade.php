@@ -5,14 +5,16 @@
 @section('content')
 <div class="flex-1 flex flex-col h-full overflow-hidden">
     <!-- Header -->
-    <div class="px-8 py-6 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 flex justify-between items-center sticky top-0 z-20">
-        <div>
-            <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Kelola Nilai Ijazah (DKN)</h1>
-            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Pilih kelas tingkat akhir untuk mengelola nilai ujian dan ijazah.</p>
+    <div class="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-20">
+        <div class="max-w-6xl mx-auto px-8 py-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Kelola Nilai Ijazah (DKN)</h1>
+                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Pilih kelas tingkat akhir untuk mengelola nilai ujian dan ijazah.</p>
+            </div>
+            <a href="{{ route('tu.dashboard') }}" class="btn-boss bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span> Kembali
+            </a>
         </div>
-        <a href="{{ route('tu.dashboard') }}" class="btn-boss bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 flex items-center gap-2">
-            <span class="material-symbols-outlined text-[18px]">arrow_back</span> Kembali
-        </a>
     </div>
 
     <!-- Content -->
@@ -39,13 +41,13 @@
             @else
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     @foreach($finalClasses as $kelas)
-                        <div class="card-boss relative overflow-hidden group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                        <div class="card-boss relative overflow-hidden group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
                             <!-- Background Decoration -->
                             <div class="absolute -top-4 -right-4 p-8 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-110 duration-500 rotate-12">
                                 <span class="material-symbols-outlined text-9xl text-primary">school</span>
                             </div>
 
-                            <div class="relative z-10 flex flex-col h-full">
+                            <div class="relative z-10 flex flex-col h-full p-6">
                                 <span class="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider w-fit mb-3 border border-primary/20">
                                     {{ $kelas->jenjang->nama_jenjang ?? $kelas->tingkat_kelas }}
                                 </span>
@@ -60,15 +62,7 @@
                                 </p>
 
                                 <div class="mt-auto flex flex-col gap-3">
-                                    {{-- <a href="{{ route('tu.dkn.show', $kelas->id) }}" class="btn-boss btn-primary w-full flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-                                        <span class="material-symbols-outlined text-[18px]">edit_note</span> Input Nilai Ijazah
-                                    </a>
-                                    (Assuming this route exists or is planned, but for now matching previous file logic)
-                                    Wait, previous file had 'tu.dkn.show'.
-                                    --}}
-                                    <a href="{{ route('tu.dkn.show', $kelas->id) }}" class="btn-boss btn-primary w-full flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-                                        <span class="material-symbols-outlined text-[18px]">edit_note</span> Input Nilai Ijazah
-                                    </a>
+                                    {{-- Input Nilai link removed per user request --}}
 
                                     <a href="{{ route('tu.dkn.archive', $kelas->id) }}" class="btn-boss bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 w-full flex items-center justify-center gap-2 shadow-sm">
                                         <span class="material-symbols-outlined text-[18px]">inventory_2</span> Lihat Arsip Lengkap
