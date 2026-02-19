@@ -184,6 +184,10 @@ class SyncController extends Controller
             // UPSERT STRATEGY (Use ID as key)
             // Note: If Online has ID 100 and Offline has ID 100 but different content, Offline wins here.
 
+            if (isset($data['siswa'])) {
+                foreach ($data['siswa'] as $item) DB::table('siswa')->updateOrInsert(['id' => $item['id']], (array)$item);
+            }
+
             if (isset($data['tagihan'])) {
                 foreach ($data['tagihan'] as $item) DB::table('tagihans')->updateOrInsert(['id' => $item['id']], (array)$item);
             }

@@ -257,6 +257,7 @@ class SyncClientController extends Controller
             // Warning: Huge payload if database is large. Ideally chunk it or filter by date.
 
             $payload = [
+                'siswa' => DB::table('siswa')->get()->toArray(), // Include Student Data (Status updates etc)
                 'tagihan' => DB::table('tagihans')->get()->toArray(),
                 'transaksi' => DB::table('transaksis')->get()->toArray(),
                 'pemasukan_lain' => DB::table('pemasukans')->get()->toArray(),
@@ -270,6 +271,7 @@ class SyncClientController extends Controller
 
             if ($response->successful()) {
                 $summary = [
+                    'Siswa' => count($payload['siswa']),
                     'Tagihan' => count($payload['tagihan']),
                     'Transaksi' => count($payload['transaksi']),
                     'Pemasukan Lain' => count($payload['pemasukan_lain']),
