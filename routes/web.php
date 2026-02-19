@@ -42,44 +42,22 @@ Route::post('/portal-admin', [AuthController::class, 'login'])->middleware('thro
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// TEMP: Fix Symlink for Online Server (Shared Hosting Friendly)
-// TEMP: Debug & Fix Symlink
-Route::get('/fix-symlink', function () {
-    $target = storage_path('app/public');
-    $publicPath = public_path();
-    $linkStruk = public_path('struk'); // Try direct link to 'struk' if needed
+// SERVE IMAGES DIRECTLY (Bypass Symlink/Storage Link Issues)
+Route::get('/bukti/{path}', function ($path) {
+    // Security: Prevent Directory Traversal
+    if (strpos($path, '..') !== false) abort(404);
 
-    $info = "
-    <b>Debug Paths:</b><br>
-    Storage Path (Target): $target <br>
-    Public Path: $publicPath <br>
-    <hr>
-    ";
+    $fullPath = storage_path('app/public/' . $path);
 
-    // Scenario: User says files are in public_html/storage/app/public/struk/
-    // This means 'storage' in public_html is a REAL FOLDER, not a LINK.
-    // So we cannot use domain.com/storage (it points to the folder, which has 'app' inside, not 'struk' directly).
-
-    // Solution 1: Create a link named 'bukti' -> pointing to 'storage/app/public'
-    $linkBukti = public_path('bukti');
-
-    try {
-        if (!file_exists($linkBukti)) {
-             symlink($target, $linkBukti);
-             $info .= "<b style='color:green'>SUCCESS: Created symlink '/bukti' -> '$target'</b><br>";
-        } else {
-             $info .= "Symlink '/bukti' already exists.<br>";
-             if (is_link($linkBukti)) $info .= "It points to: " . readlink($linkBukti) . "<br>";
-        }
-
-        $info .= "<br><b>Try accessing your photo at:</b> <br> domain.com/bukti/struk/filename.jpg";
-
-        return $info;
-
-    } catch (\Exception $e) {
-        return $info . "<br><b style='color:red'>Error: " . $e->getMessage() . "</b>";
+    if (!file_exists($fullPath)) {
+        return response("File not found: $fullPath", 404);
     }
-});
+
+    $file = \Illuminate\Support\Facades\File::get($fullPath);
+    $type = \Illuminate\Support\Facades\File::mimeType($fullPath);
+
+    return response($file, 200)->header("Content-Type", $type);
+})->where('path', '.*');
 
 // Protected Routes (Login Required)
 Route::middleware(['auth'])->group(function () {
