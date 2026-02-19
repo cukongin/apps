@@ -278,12 +278,12 @@
             @foreach($groupedPengeluarans as $category => $items)
                 @foreach($items as $item)
                     @if($item->bukti_foto)
-                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:h-[12.2cm]">
+                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:h-[11.7cm]">
                             <!-- Image Container -->
                             <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-full print:w-full">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
                                      onload="rotateIfLandscape(this)"
-                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center min-w-full min-h-full print:object-contain"
+                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center min-w-full min-h-full print:object-cover print:object-top"
                                      alt="Struk">
                             </div>
 
