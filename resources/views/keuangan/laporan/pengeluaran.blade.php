@@ -21,7 +21,7 @@
                 width: 7.7cm !important;
                 height: 10cm !important;
                 object-fit: contain !important; /* User Req: "Gambar Utuh" (Whole Image) */
-                object-position: top !important;
+                object-position: center !important; /* User Req: "Middle" */
                 /* Reset transform for normal images, but allow override for landscape */
                 transform: none;
                 margin: 0 !important;
