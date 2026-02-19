@@ -29,4 +29,5 @@ Route::middleware(\App\Http\Middleware\EnsureSyncToken::class)->prefix('sync')->
     Route::get('/full-database', [\App\Http\Controllers\Api\SyncController::class, 'pullFullDatabase']);
     Route::post('/full-push', [\App\Http\Controllers\Api\SyncController::class, 'receiveFullPush']);
     Route::post('/smart-sync', [\App\Http\Controllers\Api\SyncController::class, 'receiveSmartSync']);
+    Route::post('/upload-proof', [\App\Http\Controllers\Api\SyncController::class, 'uploadExpenseProof']);
 });

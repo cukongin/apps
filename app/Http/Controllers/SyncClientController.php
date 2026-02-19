@@ -505,7 +505,10 @@ class SyncClientController extends Controller
                     }
                 }
 
-                return redirect()->back()->with('success', 'Smart Sync Selesai! Pertukaran data berhasil.')->with('smart_sync_summary', $summary);
+            // 5. Push Photos (Auto-Run)
+            $this->pushExpensePhotos($request);
+
+            return redirect()->back()->with('success', 'Smart Sync Selesai! Pertukaran data & Foto berhasil.')->with('smart_sync_summary', $summary);
 
             } else {
                  throw new \Exception('Gagal Sync: ' . Str::limit(strip_tags($response->body()), 150));
@@ -513,6 +516,53 @@ class SyncClientController extends Controller
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Error Smart Sync: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Push Expense Photos (Local -> Server)
+     * Called automatically after Sync
+     */
+    public function pushExpensePhotos(Request $request)
+    {
+        $baseUrl = config('app.sync_base_url', env('SYNC_BASE_URL'));
+        $token = config('app.sync_token', env('SYNC_TOKEN'));
+
+        if (!$baseUrl || !$token) return; // Silent fail if not configured
+
+        try {
+            // Get Expenses with Photos
+            $pengeluaranWithFoto = DB::table('pengeluaran')->whereNotNull('bukti_foto')->get();
+            $count = 0;
+            $errors = 0;
+
+            foreach ($pengeluaranWithFoto as $p) {
+                $path = storage_path('app/public/' . $p->bukti_foto);
+                if (file_exists($path)) {
+                    $response = Http::withHeaders(['X-Sync-Token' => $token])
+                        ->attach('proof', file_get_contents($path), basename($path))
+                        ->post($baseUrl . '/api/sync/upload-proof', [
+                            'path' => $p->bukti_foto
+                        ]);
+
+                    if ($response->successful()) {
+                        $count++;
+                    } else {
+                        $errors++;
+                        Log::warning("Failed to upload expense photo ID {$p->id}: " . $response->body());
+                    }
+                }
+            }
+
+            if ($count > 0) {
+                return redirect()->back()->with('success', "Sync Foto Selesai: $count foto terupload ($errors gagal).");
+            } else {
+                return redirect()->back()->with('info', "Sync Foto: Tidak ada foto baru untuk diupload.");
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Error Push Photos: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Error Sync Foto: ' . $e->getMessage());
         }
     }
 }

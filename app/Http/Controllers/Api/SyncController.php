@@ -464,4 +464,36 @@ class SyncController extends Controller
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Upload Expense Proof File (Photo)
+     */
+    public function uploadExpenseProof(Request $request)
+    {
+        try {
+            if (!$request->hasFile('proof')) {
+                return response()->json(['success' => false, 'message' => 'No file uploaded'], 400);
+            }
+
+            $file = $request->file('proof');
+            $relativePath = $request->input('path'); // e.g., "struk/123456_nota.jpg"
+
+            if (!$relativePath) {
+                return response()->json(['success' => false, 'message' => 'Path is required'], 400);
+            }
+
+            // Security: Prevent Directory Traversal
+            if (strpos($relativePath, '..') !== false) {
+                return response()->json(['success' => false, 'message' => 'Invalid path security'], 400);
+            }
+
+            // Save File (Overwrite if exists)
+            \Illuminate\Support\Facades\Storage::disk('public')->put($relativePath, file_get_contents($file));
+
+            return response()->json(['success' => true, 'path' => $relativePath]);
+
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }

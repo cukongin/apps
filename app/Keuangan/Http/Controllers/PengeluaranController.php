@@ -82,9 +82,9 @@ class PengeluaranController extends \App\Http\Controllers\Controller
     {
         $pengeluaran = \App\Keuangan\Models\Pengeluaran::findOrFail($id);
 
-        // Permission: Only 'admin_utama' OR 'Owner' can delete
-        if (auth()->user()->role !== 'admin_utama' && $pengeluaran->user_id != auth()->id()) {
-            return back()->with('error', 'Akses Ditolak! Data hanya bisa dihapus oleh Pembuat atau Admin.');
+        // Permission: 'admin_utama', 'bendahara', OR 'Owner' can delete
+        if (!in_array(auth()->user()->role, ['admin_utama', 'bendahara']) && $pengeluaran->user_id != auth()->id()) {
+            return back()->with('error', 'Akses Ditolak! Data hanya bisa dihapus oleh Pembuat, Admin, atau Bendahara.');
         }
 
         if ($pengeluaran->bukti_foto && \Illuminate\Support\Facades\Storage::disk('public')->exists($pengeluaran->bukti_foto)) {

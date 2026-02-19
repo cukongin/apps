@@ -141,7 +141,7 @@
                                                 <span class="material-symbols-outlined text-[18px]">receipt_long</span>
                                             </button>
 
-                                            @if(auth()->user()->role == 'admin_utama' || $p->user_id == auth()->id())
+                                            @if(in_array(auth()->user()->role, ['admin_utama', 'bendahara']) || $p->user_id == auth()->id())
                                             <form action="{{ route('keuangan.pengeluaran.destroy', $p->id) }}" method="POST" onsubmit="return confirmDelete(event, 'Hapus Pengeluaran?', 'Data pengeluaran ini akan dihapus permanen!')">
                                                 @csrf
                                                 @method('DELETE')

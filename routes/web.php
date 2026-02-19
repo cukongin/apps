@@ -42,6 +42,16 @@ Route::post('/portal-admin', [AuthController::class, 'login'])->middleware('thro
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// TEMP: Fix Symlink for Online Server
+Route::get('/fix-symlink', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('storage:link');
+        return 'Symlink Created Successfully! Check public/storage';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
+
 // Protected Routes (Login Required)
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
