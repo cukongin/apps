@@ -267,7 +267,7 @@
     <!-- LAMPIRAN NOTA (Halaman Baru - Only if receipts exist) -->
     @if($totalReceipts > 0)
     <div class="block print:break-before-page mt-8 w-full print:mt-0">
-        <div class="mb-6 pt-8 print:pt-4 text-left print:text-center">
+        <div class="mb-6 pt-8 print:pt-4 text-center">
             <h2 class="text-lg font-bold uppercase border-b-2 border-black inline-block pb-1">LAMPIRAN BUKTI TRANSAKSI</h2>
             <p class="text-xs mt-1 text-gray-600 print:text-black">{{ \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y') }}</p>
         </div>
