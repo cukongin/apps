@@ -28,6 +28,7 @@ class SyncController extends Controller
                     'jenjang' => Jenjang::all(),
                     'tahun_ajaran' => TahunAjaran::all(),
                     'semester' => Semester::all(),
+                    'users' => User::all(), // Sync Users (Required for Siswa/Guru FK)
                     'guru' => Guru::all(),
                     'kelas' => Kelas::all(),
                     'mapel' => Mapel::all(),

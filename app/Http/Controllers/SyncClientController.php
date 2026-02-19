@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use App\Models\User;
 use App\Models\Guru;
 use App\Models\Siswa;
 use App\Models\Kelas;
@@ -12,7 +14,7 @@ use App\Models\Mapel;
 use App\Models\Jenjang;
 use App\Models\TahunAjaran;
 use App\Models\Semester;
-use RealRashid\SweetAlert\Facades\Alert;
+// use RealRashid\SweetAlert\Facades\Alert; (Removed to avoid dependency error)
 
 class SyncClientController extends Controller
 {
@@ -27,8 +29,7 @@ class SyncClientController extends Controller
         $token = config('app.sync_token', env('SYNC_TOKEN'));
 
         if (!$baseUrl || !$token) {
-            Alert::error('Gagal', 'URL Server atau Token belum dikonfigurasi di .env!');
-            return redirect()->back();
+            return redirect()->back()->with('error', 'Gagal: URL Server atau Token belum dikonfigurasi di .env!');
         }
 
         try {
@@ -42,44 +43,85 @@ class SyncClientController extends Controller
 
             $data = $response->json('data');
 
+            Log::info('Sync Master Data Start', [
+                'users_count' => count($data['users'] ?? []),
+                'jenjang_count' => count($data['jenjang'] ?? []),
+                'guru_count' => count($data['guru'] ?? []),
+                'siswa_count' => count($data['siswa'] ?? []),
+            ]);
+
             DB::beginTransaction();
 
-            // Sync Jenjang (Example)
+            // Sync Users First (FK Dependency)
+            if (isset($data['users'])) {
+                User::unguard();
+                foreach ($data['users'] as $item) {
+                     // Sanitize if needed
+                     User::updateOrCreate(['id' => $item['id']], $item);
+                }
+                User::reguard();
+            }
+
+            // Sync Jenjang
+            Jenjang::unguard();
             foreach ($data['jenjang'] as $item) {
                 Jenjang::updateOrCreate(['id' => $item['id']], $item);
             }
+            Jenjang::reguard();
 
             // Sync Tahun Ajaran
+            TahunAjaran::unguard();
             foreach ($data['tahun_ajaran'] as $item) {
                 TahunAjaran::updateOrCreate(['id' => $item['id']], $item);
             }
+            TahunAjaran::reguard();
 
             // Sync Semester
-             foreach ($data['semester'] as $item) {
+            Semester::unguard();
+            foreach ($data['semester'] as $item) {
                 Semester::updateOrCreate(['id' => $item['id']], $item);
             }
+            Semester::reguard();
 
-            // Sync Guru (Match by NIP or Name if NIP null)
+            // Sync Guru
+            Guru::unguard();
             foreach ($data['guru'] as $item) {
                 Guru::updateOrCreate(['id' => $item['id']], $item);
             }
+            Guru::reguard();
 
             // Sync Mapel
+            Mapel::unguard();
             foreach ($data['mapel'] as $item) {
                 Mapel::updateOrCreate(['id' => $item['id']], $item);
             }
+            Mapel::reguard();
 
             // Sync Kelas
+            Kelas::unguard();
             foreach ($data['kelas'] as $item) {
                 Kelas::updateOrCreate(['id' => $item['id']], $item);
             }
+            Kelas::reguard();
 
             // Sync Siswa
+            Siswa::unguard();
             foreach ($data['siswa'] as $item) {
-                Siswa::updateOrCreate(['id' => $item['id']], $item);
+                // Sanitize: Remove relations that are not columns
+                if (isset($item['kelas'])) unset($item['kelas']);
+                if (isset($item['user'])) unset($item['user']); // Also remove user relation if present
+
+                try {
+                    Siswa::updateOrCreate(['id' => $item['id']], $item);
+                } catch (\Exception $e) {
+                     Log::error('Failed to sync Siswa ID: ' . $item['id'], ['error' => $e->getMessage()]);
+                     throw $e; // Re-throw to trigger rollback
+                }
             }
+            Siswa::reguard();
 
             DB::commit();
+            Log::info('Sync Master Data Completed Successfully');
 
             // 2. Pull Academic Data (Optional: Separate button or same flow)
              $academicResponse = Http::withHeaders(['X-Sync-Token' => $token])
@@ -129,13 +171,12 @@ class SyncClientController extends Controller
                 foreach ($finData['tabungan'] as $item) DB::table('tabungan')->updateOrInsert(['id' => $item['id']], (array)$item);
             }
 
-            Alert::success('Berhasil', 'Sinkronisasi Lengkap (Akademik & Keuangan) Selesai!');
-            return redirect()->back();
+            return redirect()->back()->with('success', 'Berhasil: Sinkronisasi Lengkap (Akademik & Keuangan) Selesai!');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Alert::error('Error', 'Terjadi kesalahan: ' . $e->getMessage());
-            return redirect()->back();
+            Log::error('Sync Failed Global', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Error: Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
@@ -148,8 +189,7 @@ class SyncClientController extends Controller
         $token = config('app.sync_token', env('SYNC_TOKEN'));
 
         if (!$baseUrl || !$token) {
-            Alert::error('Gagal', 'URL Server atau Token belum dikonfigurasi!');
-            return redirect()->back();
+            return redirect()->back()->with('error', 'Gagal: URL Server atau Token belum dikonfigurasi!');
         }
 
         try {
@@ -170,16 +210,13 @@ class SyncClientController extends Controller
                             ->post($baseUrl . '/api/sync/finance-push', $payload);
 
             if ($response->successful()) {
-                Alert::success('Berhasil', 'Data Keuangan Berhasil Dikirim ke Server!');
+                return redirect()->back()->with('success', 'Berhasil: Data Keuangan Berhasil Dikirim ke Server!');
             } else {
                 throw new \Exception('Gagal kirim: ' . $response->body());
             }
 
-            return redirect()->back();
-
         } catch (\Exception $e) {
-            Alert::error('Error', 'Gagal Push: ' . $e->getMessage());
-            return redirect()->back();
+            return redirect()->back()->with('error', 'Error: Gagal Push: ' . $e->getMessage());
         }
     }
 }
