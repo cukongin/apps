@@ -42,13 +42,42 @@ Route::post('/portal-admin', [AuthController::class, 'login'])->middleware('thro
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// TEMP: Fix Symlink for Online Server
+// TEMP: Fix Symlink for Online Server (Shared Hosting Friendly)
+// TEMP: Debug & Fix Symlink
 Route::get('/fix-symlink', function () {
+    $target = storage_path('app/public');
+    $publicPath = public_path();
+    $linkStruk = public_path('struk'); // Try direct link to 'struk' if needed
+
+    $info = "
+    <b>Debug Paths:</b><br>
+    Storage Path (Target): $target <br>
+    Public Path: $publicPath <br>
+    <hr>
+    ";
+
+    // Scenario: User says files are in public_html/storage/app/public/struk/
+    // This means 'storage' in public_html is a REAL FOLDER, not a LINK.
+    // So we cannot use domain.com/storage (it points to the folder, which has 'app' inside, not 'struk' directly).
+
+    // Solution 1: Create a link named 'bukti' -> pointing to 'storage/app/public'
+    $linkBukti = public_path('bukti');
+
     try {
-        \Illuminate\Support\Facades\Artisan::call('storage:link');
-        return 'Symlink Created Successfully! Check public/storage';
+        if (!file_exists($linkBukti)) {
+             symlink($target, $linkBukti);
+             $info .= "<b style='color:green'>SUCCESS: Created symlink '/bukti' -> '$target'</b><br>";
+        } else {
+             $info .= "Symlink '/bukti' already exists.<br>";
+             if (is_link($linkBukti)) $info .= "It points to: " . readlink($linkBukti) . "<br>";
+        }
+
+        $info .= "<br><b>Try accessing your photo at:</b> <br> domain.com/bukti/struk/filename.jpg";
+
+        return $info;
+
     } catch (\Exception $e) {
-        return 'Error: ' . $e->getMessage();
+        return $info . "<br><b style='color:red'>Error: " . $e->getMessage() . "</b>";
     }
 });
 

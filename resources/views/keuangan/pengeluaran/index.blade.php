@@ -445,7 +445,7 @@
             const imgContainer = document.getElementById('detail-image-container');
             const img = document.getElementById('detail-image');
             if (pengeluaran.bukti_foto) {
-                img.src = '/storage/' + pengeluaran.bukti_foto;
+                img.src = '/bukti/' + pengeluaran.bukti_foto;
                 imgContainer.classList.remove('hidden');
             } else {
                 imgContainer.classList.add('hidden');
