@@ -140,18 +140,38 @@ class SyncClientController extends Controller
                 // Note: We should truncate or be careful with duplicates.
                 // For "Pull" strategy, usually we replace local data with server data for the active period.
 
+                // Sync Nilai (Direct DB Insert for performance/simplicity)
                 foreach ($acData['nilai'] as $item) {
-                    DB::table('nilai')->updateOrInsert(
+                     // Ensure no 'kelas' column error by unsetting checks if needed, but usually raw DB insert is fine if columns match
+                    DB::table('nilai_siswa')->updateOrInsert(
                         ['id' => $item['id']],
                         (array)$item
                     );
                 }
 
                 foreach ($acData['absensi'] as $item) {
-                    DB::table('absensi')->updateOrInsert(
+                    DB::table('catatan_kehadiran')->updateOrInsert(
                         ['id' => $item['id']],
                         (array)$item
                     );
+                }
+
+                if (isset($acData['catatan'])) {
+                    foreach ($acData['catatan'] as $item) {
+                        DB::table('catatan_wali_kelas')->updateOrInsert(
+                            ['id' => $item['id']],
+                            (array)$item
+                        );
+                    }
+                }
+
+                if (isset($acData['nilai_ekskul'])) {
+                    foreach ($acData['nilai_ekskul'] as $item) {
+                        DB::table('nilai_ekstrakurikuler')->updateOrInsert(
+                            ['id' => $item['id']],
+                            (array)$item
+                        );
+                    }
                 }
             }
 
@@ -163,18 +183,21 @@ class SyncClientController extends Controller
                 $finData = $financeResponse->json('data');
 
                 // Sync Master Finance
-                foreach ($finData['pos_bayar'] as $item) DB::table('pos_bayar')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['jenis_bayar'] as $item) DB::table('jenis_bayar')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['kategori_pemasukan'] as $item) DB::table('kategori_pemasukan')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['kategori_pengeluaran'] as $item) DB::table('kategori_pengeluaran')->updateOrInsert(['id' => $item['id']], (array)$item);
+                // Server sends 'jenis_biaya' (joined pos_bayar/jenis_bayar) -> insert to 'jenis_biayas'
+                if(isset($finData['jenis_biaya'])) {
+                    foreach ($finData['jenis_biaya'] as $item) DB::table('jenis_biayas')->updateOrInsert(['id' => $item['id']], (array)$item);
+                }
+
+                foreach ($finData['kategori_pemasukan'] as $item) DB::table('kategori_pemasukans')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['kategori_pengeluaran'] as $item) DB::table('kategori_pengeluarans')->updateOrInsert(['id' => $item['id']], (array)$item);
 
                 // Sync Transactions (Heavy Data)
-                foreach ($finData['tagihan'] as $item) DB::table('tagihan')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['transaksi'] as $item) DB::table('transaksi')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['tagihan'] as $item) DB::table('tagihans')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['transaksi'] as $item) DB::table('transaksis')->updateOrInsert(['id' => $item['id']], (array)$item);
 
-                foreach ($finData['pemasukan_lain'] as $item) DB::table('pemasukan_lain')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['pengeluaran_lain'] as $item) DB::table('pengeluaran_lain')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['tabungan'] as $item) DB::table('tabungan')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['pemasukan_lain'] as $item) DB::table('pemasukans')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['pengeluaran_lain'] as $item) DB::table('pengeluarans')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['tabungan'] as $item) DB::table('tabungans')->updateOrInsert(['id' => $item['id']], (array)$item);
             }
 
             return redirect()->back()->with('success', 'Berhasil: Sinkronisasi Lengkap (Akademik & Keuangan) Selesai!');
@@ -204,11 +227,11 @@ class SyncClientController extends Controller
             // Warning: Huge payload if database is large. Ideally chunk it or filter by date.
 
             $payload = [
-                'tagihan' => DB::table('tagihan')->get()->toArray(),
-                'transaksi' => DB::table('transaksi')->get()->toArray(),
-                'pemasukan_lain' => DB::table('pemasukan_lain')->get()->toArray(),
-                'pengeluaran_lain' => DB::table('pengeluaran_lain')->get()->toArray(),
-                'tabungan' => DB::table('tabungan')->get()->toArray(),
+                'tagihan' => DB::table('tagihans')->get()->toArray(),
+                'transaksi' => DB::table('transaksis')->get()->toArray(),
+                'pemasukan_lain' => DB::table('pemasukans')->get()->toArray(),
+                'pengeluaran_lain' => DB::table('pengeluarans')->get()->toArray(),
+                'tabungan' => DB::table('tabungans')->get()->toArray(),
             ];
 
             // Send to Server

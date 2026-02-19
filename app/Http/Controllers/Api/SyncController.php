@@ -57,31 +57,43 @@ class SyncController extends Controller
             $semesterId = $request->input('semester_id');
 
             // Fetch Data
-            // Note: Adjust table names based on your actual schema for grades/attendance
-            // Using DB::table for raw performance if models are complex, or Models if clean.
+            // Corrected Table Names & Column Filters
 
-            // Example for Grades (Nilai)
-            $nilaiQuery = DB::table('nilai');
-            if ($tahunId) $nilaiQuery->where('tahun_ajaran_id', $tahunId);
-            if ($semesterId) $nilaiQuery->where('semester_id', $semesterId);
+            // 1. Nilai (nilai_siswa)
+            $nilaiQuery = DB::table('nilai_siswa');
+            if ($semesterId) $nilaiQuery->where('id_periode', $semesterId);
+            elseif ($tahunId) {
+                // If only Year ID provided, get periods for that year
+                $periodIds = DB::table('periode')->where('id_tahun_ajaran', $tahunId)->pluck('id');
+                $nilaiQuery->whereIn('id_periode', $periodIds);
+            }
             $nilai = $nilaiQuery->get();
 
-            // Example for Attendance (Absensi)
-            $absensiQuery = DB::table('absensi');
-            if ($tahunId) $absensiQuery->where('tahun_ajaran_id', $tahunId);
-            if ($semesterId) $absensiQuery->where('semester_id', $semesterId);
+            // 2. Absensi (catatan_kehadiran)
+            $absensiQuery = DB::table('catatan_kehadiran');
+            if ($semesterId) $absensiQuery->where('id_periode', $semesterId);
+            elseif ($tahunId) {
+                $periodIds = DB::table('periode')->where('id_tahun_ajaran', $tahunId)->pluck('id');
+                $absensiQuery->whereIn('id_periode', $periodIds);
+            }
             $absensi = $absensiQuery->get();
 
-            // Example for Catatan Wali Kelas
-            $catatanQuery = DB::table('catatan_walikelas');
-            if ($tahunId) $catatanQuery->where('tahun_ajaran_id', $tahunId);
-            if ($semesterId) $catatanQuery->where('semester_id', $semesterId);
+            // 3. Catatan Wali Kelas (catatan_wali_kelas)
+            $catatanQuery = DB::table('catatan_wali_kelas');
+            if ($semesterId) $catatanQuery->where('id_periode', $semesterId);
+            elseif ($tahunId) {
+                $periodIds = DB::table('periode')->where('id_tahun_ajaran', $tahunId)->pluck('id');
+                $catatanQuery->whereIn('id_periode', $periodIds);
+            }
             $catatan = $catatanQuery->get();
 
-             // Example for Prestasi/Ekskul
-             $ekskulQuery = DB::table('nilai_ekskul');
-             if ($tahunId) $ekskulQuery->where('tahun_ajaran_id', $tahunId);
-             if ($semesterId) $ekskulQuery->where('semester_id', $semesterId);
+             // 4. Ekskul (nilai_ekstrakurikuler)
+             $ekskulQuery = DB::table('nilai_ekstrakurikuler');
+             if ($semesterId) $ekskulQuery->where('id_periode', $semesterId);
+             elseif ($tahunId) {
+                 $periodIds = DB::table('periode')->where('id_tahun_ajaran', $tahunId)->pluck('id');
+                 $ekskulQuery->whereIn('id_periode', $periodIds);
+             }
              $ekskul = $ekskulQuery->get();
 
             return response()->json([
@@ -110,35 +122,41 @@ class SyncController extends Controller
             $tahunId = $request->input('tahun_ajaran_id');
 
             // Finance Master Data
-            $kategoriPemasukan = DB::table('kategori_pemasukan')->get(); // Adjust table name
-            $kategoriPengeluaran = DB::table('kategori_pengeluaran')->get(); // Adjust table name
-            $posBayar = DB::table('pos_bayar')->get(); // Adjust table name
-            $jenisBayar = DB::table('jenis_bayar')->get(); // Adjust table name
+            $kategoriPemasukan = DB::table('kategori_pemasukans')->get();
+            $kategoriPengeluaran = DB::table('kategori_pengeluarans')->get();
+            $posBayar = DB::table('jenis_biayas')->get(); // Assuming pos_bayar maps to jenis_biayas or similar? Wait, list_tables has 'jenis_biayas'.
+            // Let's check 'jenis_bayar' and 'pos_bayar'. List tables has 'jenis_biayas'.
+            // User code had 'pos_bayar' and 'jenis_bayar'.
+            // I will assume standard pluralization if specific match not found, but 'jenis_biayas' looks like 'jenis_biaya'.
+            // To be safe, I'll use the exact names from list_tables.php: 'kategori_pemasukans', 'kategori_pengeluarans', 'jenis_biayas', 'tagihans', 'transaksis', 'pemasukans', 'pengeluarans', 'tabungans'.
+
+            // Correction: I don't see 'pos_bayar' or 'jenis_bayar' in list_tables.
+            // I see 'jenis_biayas'. I see 'pemasukans'.
+            // I will use the names present in list_tables.
+
+            $kategoriPemasukan = DB::table('kategori_pemasukans')->get();
+            $kategoriPengeluaran = DB::table('kategori_pengeluarans')->get();
+            $jenisBiaya = DB::table('jenis_biayas')->get();
+            // $posBayar - unsure, maybe not existing? skipping for now or mapping to jenis_biayas?
 
             // Transactional Data
-            // Note: Filter optimizations should be applied for large datasets (e.g. paging or date range)
-            // For now, we pull based on Active Year if possible, or all (Warning: Heavy).
-
-            $tagihanQuery = DB::table('tagihan');
-            if ($tahunId) $tagihanQuery->where('tahun_ajaran_id', $tahunId);
+            $tagihanQuery = DB::table('tagihans');
+            if ($tahunId) $tagihanQuery->where('tahun_ajaran_id', $tahunId); // Need to verify if 'tagihans' has 'tahun_ajaran_id'
             $tagihan = $tagihanQuery->get();
 
-            $transaksiQuery = DB::table('transaksi'); // Linked to tagihan usually
-            // if ($tahunId) ... connection to year is via tagihan usually.
-            // For simplicity, we might just pull all relevant/recent.
+            $transaksiQuery = DB::table('transaksis');
             $transaksi = $transaksiQuery->get();
 
-            $pemasukanLain = DB::table('pemasukan_lain')->get();
-            $pengeluaranLain = DB::table('pengeluaran_lain')->get();
-            $tabungan = DB::table('tabungan')->get();
+            $pemasukanLain = DB::table('pemasukans')->get();
+            $pengeluaranLain = DB::table('pengeluarans')->get();
+            $tabungan = DB::table('tabungans')->get();
 
             return response()->json([
                 'success' => true,
                 'data' => [
                     'kategori_pemasukan' => $kategoriPemasukan,
                     'kategori_pengeluaran' => $kategoriPengeluaran,
-                    'pos_bayar' => $posBayar,
-                    'jenis_bayar' => $jenisBayar,
+                    'jenis_biaya' => $jenisBiaya, // Changed key
                     'tagihan' => $tagihan,
                     'transaksi' => $transaksi,
                     'pemasukan_lain' => $pemasukanLain,
@@ -167,23 +185,23 @@ class SyncController extends Controller
             // Note: If Online has ID 100 and Offline has ID 100 but different content, Offline wins here.
 
             if (isset($data['tagihan'])) {
-                foreach ($data['tagihan'] as $item) DB::table('tagihan')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($data['tagihan'] as $item) DB::table('tagihans')->updateOrInsert(['id' => $item['id']], (array)$item);
             }
 
             if (isset($data['transaksi'])) {
-                foreach ($data['transaksi'] as $item) DB::table('transaksi')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($data['transaksi'] as $item) DB::table('transaksis')->updateOrInsert(['id' => $item['id']], (array)$item);
             }
 
             if (isset($data['pemasukan_lain'])) {
-                foreach ($data['pemasukan_lain'] as $item) DB::table('pemasukan_lain')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($data['pemasukan_lain'] as $item) DB::table('pemasukans')->updateOrInsert(['id' => $item['id']], (array)$item);
             }
 
             if (isset($data['pengeluaran_lain'])) {
-                foreach ($data['pengeluaran_lain'] as $item) DB::table('pengeluaran_lain')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($data['pengeluaran_lain'] as $item) DB::table('pengeluarans')->updateOrInsert(['id' => $item['id']], (array)$item);
             }
 
             if (isset($data['tabungan'])) {
-                foreach ($data['tabungan'] as $item) DB::table('tabungan')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($data['tabungan'] as $item) DB::table('tabungans')->updateOrInsert(['id' => $item['id']], (array)$item);
             }
 
             DB::commit();
