@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
-use App\Models\Guru;
+use App\Models\DataGuru;
 use App\Models\Siswa;
 use App\Models\Kelas;
 use App\Models\Mapel;
@@ -32,7 +32,7 @@ class SyncController extends Controller
                     // Plan: Update key to 'semester' containing Periode data, but Client will map it to Periode model.
                     'semester' => Periode::all(),
                     'users' => User::all(), // Sync Users (Required for Siswa/Guru FK)
-                    'guru' => Guru::all(),
+                    'guru' => DataGuru::all(), // Changed from Guru::all()
                     'kelas' => Kelas::all(),
                     'mapel' => Mapel::all(),
                     'siswa' => Siswa::with('kelas')->get(), // Eager load current class

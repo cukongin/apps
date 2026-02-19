@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
-use App\Models\Guru;
+use App\Models\DataGuru;
 use App\Models\Siswa;
 use App\Models\Kelas;
 use App\Models\Mapel;
@@ -85,12 +85,12 @@ class SyncClientController extends Controller
             }
             Periode::reguard();
 
-            // Sync Guru
-            Guru::unguard();
+            // Sync Guru (Mapped to DataGuru)
+            DataGuru::unguard();
             foreach ($data['guru'] as $item) {
-                Guru::updateOrCreate(['id' => $item['id']], $item);
+                DataGuru::updateOrCreate(['id' => $item['id']], $item);
             }
-            Guru::reguard();
+            DataGuru::reguard();
 
             // Sync Mapel
             Mapel::unguard();
