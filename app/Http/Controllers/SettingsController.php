@@ -1286,8 +1286,16 @@ class SettingsController extends Controller
             // 4. Run Specific Seeders (If needed)
             // Formulas
             // 4. Run Specific Seeders (If needed)
-            // Formulas (REMOVED)
-            // if (\App\Models\GradingFormula::count() === 0) { ... }
+            // Sync Menu Seeder (Auto-seeded on update to ensure Menu exists)
+            try {
+                \Illuminate\Support\Facades\Artisan::call('db:seed', [
+                    '--class' => 'SyncMenuSeeder',
+                    '--force' => true
+                ]);
+                $log .= "Sync Seeder Output: " . \Illuminate\Support\Facades\Artisan::output() . "\n";
+            } catch (\Exception $seedErr) {
+                $log .= "Sync Seeder Skipped/Error: " . $seedErr->getMessage() . "\n";
+            }
 
             return back()->with('success', "Update Berhasil! Sistem via Git (Proc Open).\nLog:\n" . $log);
 
