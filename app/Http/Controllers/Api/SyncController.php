@@ -284,24 +284,42 @@ class SyncController extends Controller
     {
         try {
             $data = $request->all(); // Expecting ['table_name' => [rows], ...]
+            $stats = [];
 
             DB::beginTransaction();
 
-            // Disable Foreign Key Checks to allow random order insertion
+            // Disable Foreign Key Checks
             DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
             foreach ($data as $table => $rows) {
-                // Skip if table not in syncable list (security)
+                // Skip if table not in syncable list
                 $syncable = $this->getSyncableTables();
                 if (!in_array($table, $syncable)) continue;
+
+                $stats[$table] = ['inserted' => 0, 'updated' => 0, 'unchanged' => 0];
 
                 if (is_array($rows)) {
                     foreach ($rows as $row) {
                         try {
-                            DB::table($table)->updateOrInsert(['id' => $row['id']], (array)$row);
+                            $row = (array)$row;
+                            $exists = DB::table($table)->where('id', $row['id'])->first();
+
+                            if ($exists) {
+                                // Try Update
+                                $affected = DB::table($table)->where('id', $row['id'])->update($row);
+                                if ($affected > 0) {
+                                    $stats[$table]['updated']++;
+                                } else {
+                                    $stats[$table]['unchanged']++;
+                                }
+                            } else {
+                                // Insert
+                                DB::table($table)->insert($row);
+                                $stats[$table]['inserted']++;
+                            }
+
                         } catch (\Exception $e) {
-                           // Skip error for specific row but log it?
-                           // For now, let's try-catch per row to prevent one bad apple ruining the batch
+                           // Log specific row error
                         }
                     }
                 }
@@ -312,11 +330,15 @@ class SyncController extends Controller
 
             DB::commit();
 
-            return response()->json(['success' => true, 'message' => 'Full Database Synchronized Successfully.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Full Database Synchronized Successfully.',
+                'stats' => $stats
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            DB::statement('SET FOREIGN_KEY_CHECKS=1;'); // Ensure checks are back on
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
             return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
         }
     }

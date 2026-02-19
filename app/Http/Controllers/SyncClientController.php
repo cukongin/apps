@@ -334,7 +334,7 @@ class SyncClientController extends Controller
 
         try {
             // Request Full Data
-            $response = Http::timeout(300) // Increase timeout for large data
+            $response = Http::timeout(300)
                             ->withHeaders(['X-Sync-Token' => $token])
                             ->get($baseUrl . '/api/sync/full-database');
 
@@ -351,15 +351,31 @@ class SyncClientController extends Controller
 
             foreach ($data as $table => $rows) {
                 if (is_array($rows)) {
+                    $tableName = Str::headline($table); // Beautify Name
+                    $summary[$tableName] = ['inserted' => 0, 'updated' => 0, 'unchanged' => 0];
+
                     foreach ($rows as $row) {
                         try {
-                            DB::table($table)->updateOrInsert(['id' => $row['id']], (array)$row);
+                            $row = (array)$row;
+                            $exists = DB::table($table)->where('id', $row['id'])->first();
+
+                            if ($exists) {
+                                // Try Update
+                                $affected = DB::table($table)->where('id', $row['id'])->update($row);
+                                if ($affected > 0) {
+                                    $summary[$tableName]['updated']++;
+                                } else {
+                                    $summary[$tableName]['unchanged']++;
+                                }
+                            } else {
+                                // Insert
+                                DB::table($table)->insert($row);
+                                $summary[$tableName]['inserted']++;
+                            }
                         } catch (\Exception $e) {
-                             // Log specific row error but continue
                              Log::warning("Sync Row Error in $table: " . $e->getMessage());
                         }
                     }
-                    $summary[$table] = count($rows);
                 }
             }
 
@@ -391,12 +407,9 @@ class SyncClientController extends Controller
             // 1. Gather ALL Local Data
             $tables = $this->getSyncableTables();
             $payload = [];
-            $summary = [];
 
             foreach ($tables as $table) {
-                $rows = DB::table($table)->get()->toArray();
-                $payload[$table] = $rows;
-                $summary[$table] = count($rows);
+                $payload[$table] = DB::table($table)->get()->toArray();
             }
 
             // 2. Send to Server
@@ -405,9 +418,17 @@ class SyncClientController extends Controller
                             ->post($baseUrl . '/api/sync/full-push', $payload);
 
             if ($response->successful()) {
+                $rawStats = $response->json('stats') ?? [];
+                $summary = [];
+
+                // Format keys to Headline
+                foreach ($rawStats as $table => $stat) {
+                    $summary[Str::headline($table)] = $stat;
+                }
+
                 return redirect()->back()->with('success', 'Berhasil: Kirim FULL DATABASE ke Server Selesai!')->with('sync_summary', $summary);
             } else {
-                throw new \Exception('Gagal push: ' . $response->body());
+                throw new \Exception('Gagal push: ' . Str::limit(strip_tags($response->body()), 150));
             }
 
         } catch (\Exception $e) {

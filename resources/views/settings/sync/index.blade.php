@@ -34,33 +34,73 @@
                     {{ now()->format('d M Y H:i') }}
                 </span>
             </div>
-            <div class="overflow-x-auto">
+            <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
                 <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-50/50 dark:bg-slate-700/20 border-b border-slate-100 dark:border-slate-700">
+                    <thead class="sticky top-0 z-10">
+                        <tr class="text-xs font-bold uppercase tracking-wider text-slate-500 bg-slate-100 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600">
                             <th class="px-6 py-3">Jenis Data</th>
-                            <th class="px-6 py-3 text-right">Jumlah</th>
+                            <th class="px-6 py-3 text-center w-24">Baru</th>
+                            <th class="px-6 py-3 text-center w-24">Update</th>
+                            <th class="px-6 py-3 text-right w-24"><span class="opacity-50">Tetap</span></th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700/50">
-                        @foreach(session('sync_summary') as $key => $count)
-                        <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
-                            <td class="px-6 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                <div class="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-primary transition-colors"></div>
-                                {{ $key }}
-                            </td>
-                            <td class="px-6 py-3 text-sm text-right">
-                                <span class="inline-flex items-center justify-center min-w-[30px] px-2 py-0.5 rounded-full text-xs font-bold {{ $count > 0 ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-slate-100 text-slate-400 border border-slate-200 dark:bg-slate-800 dark:border-slate-700' }}">
-                                    {{ $count }}
-                                </span>
+                        @php $hasChanges = false; @endphp
+                        @foreach(session('sync_summary') as $key => $stats)
+                            {{-- Check if array (new format) or int (legacy format fallback) --}}
+                            @if(is_array($stats))
+                                @php
+                                    $inserted = $stats['inserted'] ?? 0;
+                                    $updated = $stats['updated'] ?? 0;
+                                    $unchanged = $stats['unchanged'] ?? 0;
+                                    $totalChanged = $inserted + $updated;
+                                    if($totalChanged > 0) $hasChanges = true;
+                                @endphp
+                                @if($totalChanged > 0)
+                                <tr class="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group bg-emerald-50/10">
+                                    <td class="px-6 py-3 text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                                        {{ $key }}
+                                    </td>
+                                    <td class="px-6 py-3 text-sm text-center">
+                                        @if($inserted > 0)
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-600 border border-emerald-200">
+                                                +{{ $inserted }}
+                                            </span>
+                                        @else - @endif
+                                    </td>
+                                    <td class="px-6 py-3 text-sm text-center">
+                                        @if($updated > 0)
+                                            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-600 border border-amber-200">
+                                                {{ $updated }}
+                                            </span>
+                                        @else - @endif
+                                    </td>
+                                    <td class="px-6 py-3 text-sm text-right text-slate-400">
+                                        {{ $unchanged }}
+                                    </td>
+                                </tr>
+                                @endif
+                            @endif
+                        @endforeach
+
+                        {{-- Show "No Changes" Row if empty --}}
+                        @if(!$hasChanges)
+                        <tr>
+                            <td colspan="4" class="px-6 py-8 text-center text-slate-500 italic">
+                                <span class="material-symbols-outlined text-4xl mb-2 text-slate-300">check_circle</span><br>
+                                Tidak ada perubahan data. Semua data sudah sinkron.
                             </td>
                         </tr>
-                        @endforeach
+                        @endif
+
+                        {{-- Collapse/Show All Toggle (Implementation simplified: Just showing changed items for now as requested) --}}
                     </tbody>
                 </table>
             </div>
-            <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 text-center">
-                Data di atas telah berhasil diproses oleh sistem.
+            <div class="px-6 py-3 bg-slate-50 dark:bg-slate-800/30 border-t border-slate-100 dark:border-slate-700 text-xs text-slate-500 flex justify-between">
+                <span>Hanya menampilkan data yang mengalami perubahan.</span>
+                <span>Total Tabel: {{ count(session('sync_summary')) }}</span>
             </div>
         </div>
         @endif
