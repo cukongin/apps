@@ -283,7 +283,7 @@
                             <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-full print:w-full print:mb-0">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
                                      onload="rotateIfLandscape(this)"
-                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center print:w-full print:h-full print:object-contain"
+                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center print:w-full print:h-full print:object-cover print:object-top"
                                      alt="Struk">
                             </div>
 
