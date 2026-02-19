@@ -31,7 +31,7 @@
                     Ringkasan Data
                 </h4>
                 <span class="text-xs font-bold px-2 py-1 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-500">
-                    {{ now()->format('d M Y H:i') }}
+                    {{ now()->format('d M Y H:i:s') }}
                 </span>
             </div>
             <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
