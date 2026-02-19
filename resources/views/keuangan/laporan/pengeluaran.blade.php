@@ -6,10 +6,11 @@
     <style>
         @media print {
             @page {
-                margin: 0.5cm; /* Reduced margin to fit larger boxes */
+                margin: 0.5cm;
+                margin-top: 1cm; /* User Req: Page 2+ Top Margin 1cm */
             }
             @page :first {
-                margin-top: 0.5cm;
+                margin-top: 0.5cm; /* Keep Page 1 compact */
             }
             body {
                 font-family: sans-serif !important;
