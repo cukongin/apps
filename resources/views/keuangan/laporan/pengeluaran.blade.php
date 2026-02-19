@@ -16,6 +16,25 @@
                 font-size: 10pt !important;
                 line-height: 1 !important;
             }
+            .print-fix-image {
+                width: 7.7cm !important;
+                height: 10cm !important;
+                object-fit: cover !important;
+                object-position: top !important;
+                transform: none !important; /* Override JS rotation */
+                max-width: none !important;
+                max-height: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            /* Ensure container doesn't restrict */
+            .print-fix-container {
+                width: 7.7cm !important;
+                height: 10cm !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+            }
             table, td, th {
                 font-size: 10pt !important;
                 padding-top: 4px !important;
@@ -280,10 +299,10 @@
                     @if($item->bukti_foto)
                         <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:w-[7.7cm] print:h-[11.7cm] print:p-0">
                             <!-- Image Container -->
-                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:w-full print:h-[10cm] print:mb-0">
+                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:mb-0 print-fix-container">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
                                      onload="rotateIfLandscape(this)"
-                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center print:w-full print:h-full print:object-cover print:object-top"
+                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center print-fix-image"
                                      alt="Struk">
                             </div>
 
