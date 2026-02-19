@@ -266,8 +266,8 @@
 
     <!-- LAMPIRAN NOTA (Halaman Baru - Only if receipts exist) -->
     @if($totalReceipts > 0)
-    <div class="block print:break-before-page mt-8 w-full print:mt-0">
-        <div class="mb-6 pt-8 print:pt-4 text-center">
+    <div class="block print:break-before-page mt-8 w-full print:mt-2">
+        <div class="mb-6 pt-8 print:pt-0 text-center">
             <h2 class="text-lg font-bold uppercase border-b-2 border-black inline-block pb-1">LAMPIRAN BUKTI TRANSAKSI</h2>
             <p class="text-xs mt-1 text-gray-600 print:text-black">{{ \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y') }}</p>
         </div>
@@ -283,7 +283,7 @@
                             <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-full print:w-full">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
                                      onload="rotateIfLandscape(this)"
-                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center min-w-full min-h-full print:object-cover print:object-top"
+                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center min-w-full min-h-full print:w-full print:h-full print:object-cover print:object-top"
                                      alt="Struk">
                             </div>
 
