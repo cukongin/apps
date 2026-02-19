@@ -474,8 +474,13 @@ class SyncClientController extends Controller
                         foreach ($rows as $row) {
                             try {
                                 DB::table($table)->updateOrInsert(['id' => $row['id']], (array)$row);
-                            } catch (\Exception $e) {
+                            } catch (\Illuminate\Database\QueryException $e) {
+                                if ($e->getCode() === '23000') {
+                                    continue; // Skip duplicate conflicts
+                                }
                                 // Log warning
+                            } catch (\Exception $e) {
+                                // General error
                             }
                         }
                     }

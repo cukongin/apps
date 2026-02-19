@@ -382,8 +382,19 @@ class SyncController extends Controller
 
                     if (!$serverRow) {
                         // New on Client -> Insert to Server
-                        DB::table($table)->insert($clientRow);
-                        $stats['incoming'][$table]++;
+                        try {
+                            DB::table($table)->insert($clientRow);
+                            $stats['incoming'][$table]++;
+                        } catch (\Illuminate\Database\QueryException $e) {
+                            // Handle Unique Constraint Violation (Duplicate Entry)
+                            // This happens if ID is different but other Unique Keys match.
+                            // We SKIP to avoid crashing, effectively "Server Wins" for this row.
+                            if ($e->getCode() === '23000') {
+                                // Log::warning("Sync Conflict in $table: " . $e->getMessage());
+                                continue;
+                            }
+                            throw $e;
+                        }
                     } else {
                         // Conflict Resolution
                         $clientTime = isset($clientRow['updated_at']) ? strtotime($clientRow['updated_at']) : 0;
@@ -391,8 +402,15 @@ class SyncController extends Controller
 
                         if ($clientTime > $serverTime) {
                             // Client is newer -> Update Server
-                            DB::table($table)->where('id', $id)->update($clientRow);
-                            $stats['incoming'][$table]++;
+                            try {
+                                DB::table($table)->where('id', $id)->update($clientRow);
+                                $stats['incoming'][$table]++;
+                            } catch (\Illuminate\Database\QueryException $e) {
+                                if ($e->getCode() === '23000') {
+                                     continue; // Skip on conflict
+                                }
+                                throw $e;
+                            }
                         }
                     }
                 }
