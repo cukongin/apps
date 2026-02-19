@@ -12,6 +12,21 @@
         </div>
     </div>
 
+    <!-- Alerts -->
+    @if(session('success'))
+        <div class="p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+            <strong class="font-bold">Sukses!</strong>
+            <span class="block sm:inline">{{ session('success') }}</span>
+        </div>
+    @endif
+
+    @if(session('error'))
+        <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg break-words">
+            <strong class="font-bold">Gagal!</strong>
+            <span class="block sm:inline text-sm font-mono mt-1">{{ session('error') }}</span>
+        </div>
+    @endif
+
     <!-- Connection Status Card -->
     <div class="card-boss !p-6">
         <h3 class="font-bold text-lg mb-4 text-slate-800 dark:text-white flex items-center gap-2">

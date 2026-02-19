@@ -11,7 +11,7 @@ use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\Jenjang;
 use App\Models\TahunAjaran;
-use App\Models\Semester;
+use App\Models\Periode;
 use Illuminate\Support\Facades\DB;
 
 class SyncController extends Controller
@@ -27,7 +27,10 @@ class SyncController extends Controller
                 'data' => [
                     'jenjang' => Jenjang::all(),
                     'tahun_ajaran' => TahunAjaran::all(),
-                    'semester' => Semester::all(),
+                    'semester' => Periode::all(), // Send Periode data as 'semester' key for compatibility or update key? Let's use 'periode' key to be correct.
+                    // Actually, let's keep 'semester' key if client expects it, OR update client too.
+                    // Plan: Update key to 'semester' containing Periode data, but Client will map it to Periode model.
+                    'semester' => Periode::all(),
                     'users' => User::all(), // Sync Users (Required for Siswa/Guru FK)
                     'guru' => Guru::all(),
                     'kelas' => Kelas::all(),

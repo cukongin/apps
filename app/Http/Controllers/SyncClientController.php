@@ -13,7 +13,7 @@ use App\Models\Kelas;
 use App\Models\Mapel;
 use App\Models\Jenjang;
 use App\Models\TahunAjaran;
-use App\Models\Semester;
+use App\Models\Periode;
 use Illuminate\Support\Str;
 // use RealRashid\SweetAlert\Facades\Alert; (Removed to avoid dependency error)
 
@@ -78,12 +78,12 @@ class SyncClientController extends Controller
             }
             TahunAjaran::reguard();
 
-            // Sync Semester
-            Semester::unguard();
+            // Sync Semester (Mapped to Periode Table)
+            Periode::unguard();
             foreach ($data['semester'] as $item) {
-                Semester::updateOrCreate(['id' => $item['id']], $item);
+                Periode::updateOrCreate(['id' => $item['id']], $item);
             }
-            Semester::reguard();
+            Periode::reguard();
 
             // Sync Guru
             Guru::unguard();
