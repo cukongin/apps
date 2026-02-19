@@ -17,15 +17,31 @@
                 line-height: 1 !important;
             }
             .print-fix-image {
+                /* Default Portrait Print Settings */
                 width: 7.7cm !important;
                 height: 10cm !important;
-                object-fit: cover !important;
+                object-fit: contain !important; /* User Req: "Gambar Utuh" (Whole Image) */
                 object-position: top !important;
-                transform: none !important; /* Override JS rotation */
-                max-width: none !important;
-                max-height: none !important;
+                /* Reset transform for normal images, but allow override for landscape */
+                transform: none;
                 margin: 0 !important;
                 padding: 0 !important;
+            }
+
+            /* Landscape Mode - Print Specific Override */
+            .print-fix-image.is-landscape {
+                width: 10cm !important;     /* Height of container */
+                height: 7.7cm !important;   /* Width of container */
+
+                /* Center and Rotate */
+                position: absolute !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) rotate(90deg) !important;
+
+                object-fit: contain !important; /* User Req: "Gambar Utuh" */
+                max-width: none !important;
+                max-height: none !important;
             }
             /* Ensure container doesn't restrict */
             .print-fix-container {
