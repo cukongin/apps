@@ -14,6 +14,7 @@ use App\Models\Mapel;
 use App\Models\Jenjang;
 use App\Models\TahunAjaran;
 use App\Models\Semester;
+use Illuminate\Support\Str;
 // use RealRashid\SweetAlert\Facades\Alert; (Removed to avoid dependency error)
 
 class SyncClientController extends Controller
@@ -38,7 +39,8 @@ class SyncClientController extends Controller
                             ->get($baseUrl . '/api/sync/master-data');
 
             if ($response->failed()) {
-                throw new \Exception('Gagal terhubung ke server: ' . $response->body());
+                $errorMsg = 'Server Error (' . $response->status() . '): ' . Str::limit(strip_tags($response->body()), 150);
+                throw new \Exception($errorMsg);
             }
 
             $data = $response->json('data');
