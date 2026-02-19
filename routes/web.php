@@ -158,6 +158,11 @@ Route::middleware(['auth'])->group(function () {
         // Dynamic Page Manager
         Route::resource('settings/pages', App\Http\Controllers\DynamicPageController::class, ['as' => 'settings']);
 
+        // SYNC CLIENT ROUTE
+        Route::get('settings/sync', [App\Http\Controllers\SyncClientController::class, 'index'])->name('settings.sync.index');
+        Route::post('settings/sync/pull', [App\Http\Controllers\SyncClientController::class, 'pullData'])->name('settings.sync.pull');
+        Route::post('settings/sync/push', [App\Http\Controllers\SyncClientController::class, 'pushFinanceData'])->name('settings.sync.push');
+
         // Class Management (Moved here for Security)
         Route::get('/classes', [ClassroomController::class, 'index'])->name('classes.index');
         Route::post('/classes', [ClassroomController::class, 'store'])->name('classes.store');

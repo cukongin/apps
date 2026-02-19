@@ -1,0 +1,16 @@
+TYPE=VIEW
+query=select `view_nilai_pengetahuan_perkd`.`pembelajaran_id` AS `pembelajaran_id`,`view_nilai_pengetahuan_perkd`.`anggota_rombel_id` AS `anggota_rombel_id`,`view_nilai_pengetahuan_perkd`.`kompetensi_id` AS `kompetensi_id`,round(avg(`view_nilai_pengetahuan_perkd`.`nilai_kd`),0) AS `nilai_akhir` from `erapor8`.`view_nilai_pengetahuan_perkd` group by `view_nilai_pengetahuan_perkd`.`pembelajaran_id`,`view_nilai_pengetahuan_perkd`.`anggota_rombel_id`,`view_nilai_pengetahuan_perkd`.`kompetensi_id`
+md5=a93b2ba9b433b1f879f0fadc04169360
+updatable=0
+algorithm=0
+definer_user=root
+definer_host=localhost
+suid=2
+with_check_option=0
+timestamp=0001770819986895147
+create-version=2
+source=SELECT pembelajaran_id, anggota_rombel_id, kompetensi_id, round(avg(nilai_kd), 0) AS nilai_akhir FROM view_nilai_pengetahuan_perkd GROUP BY pembelajaran_id, anggota_rombel_id, kompetensi_id
+client_cs_name=utf8mb4
+connection_cl_name=utf8mb4_unicode_ci
+view_body_utf8=select `view_nilai_pengetahuan_perkd`.`pembelajaran_id` AS `pembelajaran_id`,`view_nilai_pengetahuan_perkd`.`anggota_rombel_id` AS `anggota_rombel_id`,`view_nilai_pengetahuan_perkd`.`kompetensi_id` AS `kompetensi_id`,round(avg(`view_nilai_pengetahuan_perkd`.`nilai_kd`),0) AS `nilai_akhir` from `erapor8`.`view_nilai_pengetahuan_perkd` group by `view_nilai_pengetahuan_perkd`.`pembelajaran_id`,`view_nilai_pengetahuan_perkd`.`anggota_rombel_id`,`view_nilai_pengetahuan_perkd`.`kompetensi_id`
+mariadb-version=100432

@@ -1,0 +1,26 @@
+PANDUAN MEMBUAT FILE INSTALLER (.EXE)
+=======================================
+
+Untuk membuat file "Siapps_Setup.exe" siap bagi (seperti Dapodik), ikuti langkah ini:
+
+1. PRASYARAT
+   - Download & Install "Inno Setup Compiler" (Gratis).
+   - Pastikan folder project ini sudah lengkap isinya (termasuk folder `bin` yang berisi PHP & MySQL).
+
+2. BERSIH-BERSIH (PENTING)
+   - Sebelum membuat installer, hapus file/folder yang tidak perlu agar installer tidak bengkak:
+     - Folder `.git` (Wajib hapus, ini besar).
+     - Folder `node_modules` (Jika ada).
+     - File `.env` (Hapus saja, nanti akan digenerate ulang oleh script dari `.env.desktop`).
+   - Pastikan database di `bin/mysql/data` dalam keadaan bersih/kosong (atau sesuai data awal yang diinginkan).
+
+3. BUILD INSTALLER
+   - Buka file `desktop/installer.iss` dengan Inno Setup Compiler.
+   - Klik tombol **Run** (Icon Play hijau) atau tekan **F9**.
+   - Tunggu proses kompresi selesai.
+
+4. HASIL
+   - File installer `.exe` akan muncul di folder `desktop/Output/`.
+   - File itulah yang dibagikan ke klien/sekolah.
+
+Selamat mencoba!

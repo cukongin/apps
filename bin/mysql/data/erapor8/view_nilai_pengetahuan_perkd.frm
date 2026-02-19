@@ -1,0 +1,16 @@
+TYPE=VIEW
+query=select `get_nilai_pengetahuan_siswa_by_kd`.`pembelajaran_id` AS `pembelajaran_id`,`get_nilai_pengetahuan_siswa_by_kd`.`anggota_rombel_id` AS `anggota_rombel_id`,`get_nilai_pengetahuan_siswa_by_kd`.`kompetensi_id` AS `kompetensi_id`,`get_nilai_pengetahuan_siswa_by_kd`.`kompetensi_dasar_id` AS `kompetensi_dasar_id`,sum(`get_nilai_pengetahuan_siswa_by_kd`.`bobot`) AS `bobot`,sum(`get_nilai_pengetahuan_siswa_by_kd`.`nilai`) AS `jml_nilai`,round(sum(`get_nilai_pengetahuan_siswa_by_kd`.`nilai_kd_pengetahuan`) / sum(`get_nilai_pengetahuan_siswa_by_kd`.`bobot`),0) AS `nilai_kd` from `erapor8`.`get_nilai_pengetahuan_siswa_by_kd` group by `get_nilai_pengetahuan_siswa_by_kd`.`pembelajaran_id`,`get_nilai_pengetahuan_siswa_by_kd`.`anggota_rombel_id`,`get_nilai_pengetahuan_siswa_by_kd`.`kompetensi_id`,`get_nilai_pengetahuan_siswa_by_kd`.`kompetensi_dasar_id`
+md5=5381d736f1432f999132b778f12b4c55
+updatable=0
+algorithm=0
+definer_user=root
+definer_host=localhost
+suid=2
+with_check_option=0
+timestamp=0001770819986715437
+create-version=2
+source=SELECT pembelajaran_id, anggota_rombel_id, kompetensi_id, kompetensi_dasar_id, sum(bobot) AS bobot, sum(nilai) AS jml_nilai, round(sum(nilai_kd_pengetahuan) / sum(bobot), 0) AS nilai_kd FROM get_nilai_pengetahuan_siswa_by_kd GROUP BY pembelajaran_id, anggota_rombel_id, kompetensi_id, kompetensi_dasar_id
+client_cs_name=utf8mb4
+connection_cl_name=utf8mb4_unicode_ci
+view_body_utf8=select `get_nilai_pengetahuan_siswa_by_kd`.`pembelajaran_id` AS `pembelajaran_id`,`get_nilai_pengetahuan_siswa_by_kd`.`anggota_rombel_id` AS `anggota_rombel_id`,`get_nilai_pengetahuan_siswa_by_kd`.`kompetensi_id` AS `kompetensi_id`,`get_nilai_pengetahuan_siswa_by_kd`.`kompetensi_dasar_id` AS `kompetensi_dasar_id`,sum(`get_nilai_pengetahuan_siswa_by_kd`.`bobot`) AS `bobot`,sum(`get_nilai_pengetahuan_siswa_by_kd`.`nilai`) AS `jml_nilai`,round(sum(`get_nilai_pengetahuan_siswa_by_kd`.`nilai_kd_pengetahuan`) / sum(`get_nilai_pengetahuan_siswa_by_kd`.`bobot`),0) AS `nilai_kd` from `erapor8`.`get_nilai_pengetahuan_siswa_by_kd` group by `get_nilai_pengetahuan_siswa_by_kd`.`pembelajaran_id`,`get_nilai_pengetahuan_siswa_by_kd`.`anggota_rombel_id`,`get_nilai_pengetahuan_siswa_by_kd`.`kompetensi_id`,`get_nilai_pengetahuan_siswa_by_kd`.`kompetensi_dasar_id`
+mariadb-version=100432

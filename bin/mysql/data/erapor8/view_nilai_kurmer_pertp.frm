@@ -1,0 +1,16 @@
+TYPE=VIEW
+query=select `get_nilai_kurmer_siswa_by_kd`.`pembelajaran_id` AS `pembelajaran_id`,`get_nilai_kurmer_siswa_by_kd`.`anggota_rombel_id` AS `anggota_rombel_id`,`get_nilai_kurmer_siswa_by_kd`.`tp_id` AS `tp_id`,sum(`get_nilai_kurmer_siswa_by_kd`.`nilai`) AS `nilai_tp` from `erapor8`.`get_nilai_kurmer_siswa_by_kd` group by `get_nilai_kurmer_siswa_by_kd`.`pembelajaran_id`,`get_nilai_kurmer_siswa_by_kd`.`anggota_rombel_id`,`get_nilai_kurmer_siswa_by_kd`.`tp_id`
+md5=f1c6dab33a095ea0df448d46bb1baa81
+updatable=0
+algorithm=0
+definer_user=root
+definer_host=localhost
+suid=2
+with_check_option=0
+timestamp=0001770807353244534
+create-version=2
+source=SELECT pembelajaran_id, anggota_rombel_id, tp_id, sum(nilai) AS nilai_tp FROM get_nilai_kurmer_siswa_by_kd GROUP BY pembelajaran_id, anggota_rombel_id, tp_id
+client_cs_name=utf8mb4
+connection_cl_name=utf8mb4_unicode_ci
+view_body_utf8=select `get_nilai_kurmer_siswa_by_kd`.`pembelajaran_id` AS `pembelajaran_id`,`get_nilai_kurmer_siswa_by_kd`.`anggota_rombel_id` AS `anggota_rombel_id`,`get_nilai_kurmer_siswa_by_kd`.`tp_id` AS `tp_id`,sum(`get_nilai_kurmer_siswa_by_kd`.`nilai`) AS `nilai_tp` from `erapor8`.`get_nilai_kurmer_siswa_by_kd` group by `get_nilai_kurmer_siswa_by_kd`.`pembelajaran_id`,`get_nilai_kurmer_siswa_by_kd`.`anggota_rombel_id`,`get_nilai_kurmer_siswa_by_kd`.`tp_id`
+mariadb-version=100432

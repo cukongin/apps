@@ -1,0 +1,16 @@
+TYPE=VIEW
+query=select `get_nilai_keterampilan_siswa_by_kd`.`kompetensi_id` AS `kompetensi_id`,`get_nilai_keterampilan_siswa_by_kd`.`anggota_rombel_id` AS `anggota_rombel_id`,`get_nilai_keterampilan_siswa_by_kd`.`pembelajaran_id` AS `pembelajaran_id`,`get_nilai_keterampilan_siswa_by_kd`.`kompetensi_dasar_id` AS `kompetensi_dasar_id`,round(sum(`get_nilai_keterampilan_siswa_by_kd`.`nilai_kd_keterampilan`) / sum(`get_nilai_keterampilan_siswa_by_kd`.`bobot`),0) AS `nilai_kd` from `erapor8`.`get_nilai_keterampilan_siswa_by_kd` group by `get_nilai_keterampilan_siswa_by_kd`.`kompetensi_id`,`get_nilai_keterampilan_siswa_by_kd`.`anggota_rombel_id`,`get_nilai_keterampilan_siswa_by_kd`.`pembelajaran_id`,`get_nilai_keterampilan_siswa_by_kd`.`kompetensi_dasar_id`
+md5=e153e3bfcfdca3997103820bbd58049f
+updatable=0
+algorithm=0
+definer_user=root
+definer_host=localhost
+suid=2
+with_check_option=0
+timestamp=0001770819986819663
+create-version=2
+source=SELECT kompetensi_id, anggota_rombel_id, pembelajaran_id, kompetensi_dasar_id, round(sum(nilai_kd_keterampilan) / sum(bobot), 0) AS nilai_kd FROM get_nilai_keterampilan_siswa_by_kd GROUP BY kompetensi_id, anggota_rombel_id, pembelajaran_id, kompetensi_dasar_id
+client_cs_name=utf8mb4
+connection_cl_name=utf8mb4_unicode_ci
+view_body_utf8=select `get_nilai_keterampilan_siswa_by_kd`.`kompetensi_id` AS `kompetensi_id`,`get_nilai_keterampilan_siswa_by_kd`.`anggota_rombel_id` AS `anggota_rombel_id`,`get_nilai_keterampilan_siswa_by_kd`.`pembelajaran_id` AS `pembelajaran_id`,`get_nilai_keterampilan_siswa_by_kd`.`kompetensi_dasar_id` AS `kompetensi_dasar_id`,round(sum(`get_nilai_keterampilan_siswa_by_kd`.`nilai_kd_keterampilan`) / sum(`get_nilai_keterampilan_siswa_by_kd`.`bobot`),0) AS `nilai_kd` from `erapor8`.`get_nilai_keterampilan_siswa_by_kd` group by `get_nilai_keterampilan_siswa_by_kd`.`kompetensi_id`,`get_nilai_keterampilan_siswa_by_kd`.`anggota_rombel_id`,`get_nilai_keterampilan_siswa_by_kd`.`pembelajaran_id`,`get_nilai_keterampilan_siswa_by_kd`.`kompetensi_dasar_id`
+mariadb-version=100432

@@ -1,0 +1,16 @@
+TYPE=VIEW
+query=select `view_nilai_kurmer_pertp`.`pembelajaran_id` AS `pembelajaran_id`,`view_nilai_kurmer_pertp`.`anggota_rombel_id` AS `anggota_rombel_id`,round(avg(`view_nilai_kurmer_pertp`.`nilai_tp`),0) AS `nilai_akhir` from `erapor8`.`view_nilai_kurmer_pertp` group by `view_nilai_kurmer_pertp`.`pembelajaran_id`,`view_nilai_kurmer_pertp`.`anggota_rombel_id`
+md5=cef6c4568f40c4c7b6d287651b776af3
+updatable=0
+algorithm=0
+definer_user=root
+definer_host=localhost
+suid=2
+with_check_option=0
+timestamp=0001770807353318294
+create-version=2
+source=SELECT pembelajaran_id, anggota_rombel_id, round(avg(nilai_tp), 0) AS nilai_akhir FROM view_nilai_kurmer_pertp GROUP BY pembelajaran_id, anggota_rombel_id
+client_cs_name=utf8mb4
+connection_cl_name=utf8mb4_unicode_ci
+view_body_utf8=select `view_nilai_kurmer_pertp`.`pembelajaran_id` AS `pembelajaran_id`,`view_nilai_kurmer_pertp`.`anggota_rombel_id` AS `anggota_rombel_id`,round(avg(`view_nilai_kurmer_pertp`.`nilai_tp`),0) AS `nilai_akhir` from `erapor8`.`view_nilai_kurmer_pertp` group by `view_nilai_kurmer_pertp`.`pembelajaran_id`,`view_nilai_kurmer_pertp`.`anggota_rombel_id`
+mariadb-version=100432
