@@ -467,10 +467,21 @@
         <div class="text-right text-xs mt-4 mb-1">
             @php
                 $place = !empty($titimangsaTempat) ? $titimangsaTempat : ($school->kabupaten ?? $school->kota ?? 'Tempat');
-                $date1Raw = !empty($titimangsa) ? $titimangsa : \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
+                $masehi = !empty($titimangsa) ? $titimangsa : \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
 
                 $jenjangKey = strtolower($class->jenjang->kode ?? 'mi');
-                $date2Raw = \App\Models\GlobalSetting::val('titimangsa_2_' . $jenjangKey);
+                $hijri = \App\Models\GlobalSetting::val('titimangsa_hijriyah_' . $jenjangKey);
+
+                // User Request: Hijri Top ($date1), Masehi Bottom ($date2)
+                // If Hijri exists, use it as primary (top), Masehi as secondary (bottom).
+                // If Hijri empty, just show Masehi.
+                if (!empty($hijri)) {
+                    $date1Raw = $hijri; // Row 1
+                    $date2Raw = $masehi; // Row 2
+                } else {
+                    $date1Raw = $masehi;
+                    $date2Raw = null;
+                }
             @endphp
 
             @if(!empty($date2Raw))
@@ -499,7 +510,7 @@
                 {{-- Strict Table Layout --}}
                 <div class="inline-block text-left">
                     <table style="border-collapse: collapse; white-space: nowrap;">
-                        {{-- Row 1: Hijri --}}
+                        {{-- Row 1: Top (Hijri) --}}
                         <tr class="leading-tight">
                             <td class="pr-2 text-right">{{ $place }},</td>
                             <td class="px-1 text-center">{{ $d1['day'] }}</td>
@@ -507,7 +518,7 @@
                             <td class="px-1 text-center">{{ $d1['year'] }}</td>
                             <td class="pl-1 text-left">{{ $d1['suffix'] }}</td>
                         </tr>
-                        {{-- Row 2: Masehi --}}
+                        {{-- Row 2: Bottom (Masehi) --}}
                         <tr class="leading-tight">
                             <td></td> {{-- Empty Place Column --}}
                             <td class="px-1 text-center">{{ $d2['day'] }}</td>
@@ -540,7 +551,7 @@
                         $kepalaName = $school->kepala_madrasah_mts;
                     }
                 @endphp
-                <p class="font-bold inline-block min-w-[120px] uppercase">{{ $kepalaName }}</p>
+                <p class="font-bold inline-block min-w-[120px]">{{ $kepalaName }}</p>
             </div>
 
             <!-- Teacher (Right) -->

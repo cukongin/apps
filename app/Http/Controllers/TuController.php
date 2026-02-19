@@ -253,12 +253,25 @@ class TuController extends Controller
         // Cari kelas akhir (Kelas 6 MI, Kelas 9/3 MTs, Kelas 12/3 MA)
         $finalClasses = Kelas::where('id_tahun_ajaran', $activeYear->id)
             ->where(function($q) {
-                $q->where('nama_kelas', 'LIKE', '%6%')   // MI Class 6
-                  ->orWhere('nama_kelas', 'LIKE', '%9%') // MTs Class 9
-                  ->orWhere('nama_kelas', 'LIKE', '%3%')  // MTs Class 3 (Relative)
-                  ->orWhere('nama_kelas', 'LIKE', '%IX%')  // Roman 9
-                  ->orWhere('nama_kelas', 'LIKE', '%VI%')  // Roman 6
-                  ->orWhere('nama_kelas', 'LIKE', '%III%'); // Roman 3
+                // 1. Absolutes (6, 9, 12)
+                $q->where('nama_kelas', 'LIKE', '%6%')
+                  ->orWhere('nama_kelas', 'LIKE', '%VI%')
+                  ->orWhere('nama_kelas', 'LIKE', '%9%')
+                  ->orWhere('nama_kelas', 'LIKE', '%IX%')
+                  ->orWhere('nama_kelas', 'LIKE', '%12%')
+                  ->orWhere('nama_kelas', 'LIKE', '%XII%')
+
+                  // 2. Relatives (3 / III) - MUST EXCLUDE MI/SD
+                  ->orWhere(function($sub) {
+                      $sub->where('nama_kelas', 'LIKE', '%3%')
+                          ->where('nama_kelas', 'NOT LIKE', '%MI%')
+                          ->where('nama_kelas', 'NOT LIKE', '%SD%');
+                  })
+                  ->orWhere(function($sub) {
+                      $sub->where('nama_kelas', 'LIKE', '%III%')
+                          ->where('nama_kelas', 'NOT LIKE', '%MI%')
+                          ->where('nama_kelas', 'NOT LIKE', '%SD%');
+                  });
             })->get();
 
         return view('tu.dkn-selector', compact('finalClasses'));
@@ -915,15 +928,24 @@ class TuController extends Controller
         $sigCol = \PhpOffice\PhpSpreadsheet\Cell\Coordinate::stringFromColumnIndex($sigStartColIndex);
 
         $row += 2;
-        $dDate = date('d F Y');
-        $city = $school->kabupaten ?? 'Kabupaten';
+        // Fetch Identity based on Jenjang found in Service Data
+        $identity = \App\Models\IdentitasSekolah::where('jenjang', $jenjang)->first();
+        if (!$identity) {
+             $identity = $school; // Fallback to MI/Default ($school fetched at start)
+        }
 
+        // Date (Simple Masehi ONLY for DKN)
+        // Force NOW
+        $dDate = \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
+        $city = \App\Models\GlobalSetting::val('titimangsa_tempat_' . $jkl) ?? $identity->kabupaten ?? $identity->kota ?? 'Tempat';
+
+        // Single Date Line
         $sheet->setCellValue($sigCol.$row, "$city, $dDate");
         $sheet->mergeCells("$sigCol$row:$lastCol$row");
         $sheet->getStyle("$sigCol$row")->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER);
 
         $row++;
-        $hmTitle = 'Kepala Madrasah'; // Generic or specific
+        $hmTitle = 'Kepala Madrasah';
         if ($jenjang === 'MI') $hmTitle = 'Kepala Madrasah Ibtidaiyah';
         if ($jenjang === 'MTS') $hmTitle = 'Kepala Madrasah Tsanawiyah';
 
@@ -933,9 +955,16 @@ class TuController extends Controller
 
         $row += 4;
 
-        // Dynamic Headmaster Config (Simplified with Jenjang Settings)
-        $hmName = \App\Models\GlobalSetting::val('hm_name_' . $jkl) ?: ($school->kepala_madrasah ?? '......................');
-        $hmNip = \App\Models\GlobalSetting::val('hm_nip_' . $jkl) ?: ($school->nip_kepala ?? '-');
+        // Dynamic Headmaster Config (Jenjang Aware)
+        $hmName = $identity->kepala_madrasah ?? '......................';
+        $hmNip = $identity->nip_kepala ?? '-';
+
+        // Legacy/Fallback
+        if (empty($hmName) || $hmName == '......................') {
+             if ($jenjang == 'MTS' && !empty($school->kepala_madrasah_mts)) {
+                $hmName = $school->kepala_madrasah_mts; // Legacy column check
+             }
+        }
 
         $sheet->setCellValue($sigCol.$row, $hmName);
         $sheet->mergeCells("$sigCol$row:$lastCol$row");

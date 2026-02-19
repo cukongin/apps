@@ -27,24 +27,33 @@
 <!-- ========================================== -->
 <div class="space-y-6 print:hidden">
 
-    <!-- Screen Header -->
-    <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-            <div class="flex items-center gap-2 text-sm text-slate-500 mb-1">
-                <a href="{{ route('tu.dkn.index') }}" class="hover:text-primary transition-colors">Pilih Kelas</a>
-                <span class="material-symbols-outlined text-[10px]">chevron_right</span>
-                <span>Detail DKN</span>
-            </div>
-            <h1 class="text-2xl font-bold text-slate-800 dark:text-white">DKN: {{ $kelas->nama_kelas }}</h1>
-            <p class="text-sm text-slate-500">Daftar Kumpulan Nilai Lengkap ({{ $headerRange }})</p>
-        </div>
-        <div class="flex gap-2">
-            <button onclick="window.print()" class="btn-boss btn-primary flex items-center gap-2 shadow-lg shadow-primary/30">
-                <span class="material-symbols-outlined">print</span> Cetak DKN
-            </button>
-            <a href="{{ route('tu.dkn.export_excel', $kelas->id) }}" class="btn-boss bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 flex items-center gap-2 shadow-lg shadow-emerald-600/20">
-                <span class="material-symbols-outlined">file_download</span> Export Excel (.xlsx)
+    <!-- Top Bar -->
+    <div class="print:hidden px-6 py-5 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 flex flex-col md:flex-row justify-between md:items-center gap-4 relative">
+        <div class="flex items-center gap-4">
+            <a href="{{ route('tu.dkn.index') }}" class="btn-boss bg-white dark:bg-slate-800 text-slate-500 hover:text-primary dark:hover:text-primary border border-slate-200 dark:border-slate-700 p-2.5 !rounded-xl">
+                <span class="material-symbols-outlined">arrow_back</span>
             </a>
+            <div>
+                <h1 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3 tracking-tight">
+                    <span class="bg-gradient-to-r from-primary to-emerald-500 text-transparent bg-clip-text">Arsip DKN</span>
+                </h1>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="px-2.5 py-0.5 rounded-md text-xs font-bold bg-primary/10 text-primary border border-primary/20 dark:bg-primary/20 dark:text-primary dark:border-primary/20">
+                        {{ $kelas->nama_kelas }}
+                    </span>
+                    <span class="text-xs text-slate-400">&bull; {{ $school->nama_sekolah }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+             <a href="{{ route('tu.dkn.export_excel', $kelas->id) }}" class="btn-boss bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 flex items-center gap-2 shadow-sm shadow-emerald-200">
+                <span class="material-symbols-outlined text-[18px]">table_view</span> Download Excel
+            </a>
+            {{-- Print Button (Trigger Browser Print) --}}
+            <button onclick="window.print()" class="btn-boss bg-white border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 shadow-sm">
+                 <span class="material-symbols-outlined text-[18px]">print</span> Cetak
+            </button>
         </div>
     </div>
 
@@ -54,15 +63,17 @@
         $minLulus = \App\Models\GlobalSetting::val('ijazah_min_lulus', 60);
     @endphp
 
+    <!-- Stats Section Removed (Empty) -->
+
     <!-- Screen Table (Modern, Sticky, Scrollable) -->
     <div class="card-boss !p-0 overflow-hidden flex flex-col">
         <div class="overflow-auto relative max-h-[75vh] custom-scrollbar">
             <table class="w-full text-left text-sm border-collapse">
-                <thead class="bg-slate-50 dark:bg-slate-800/80 uppercase text-[10px] font-bold text-slate-600 dark:text-slate-400 sticky top-0 z-20 backdrop-blur-sm">
+                <thead class="bg-slate-50 dark:bg-slate-800/80 uppercase text-[10px] font-bold text-slate-600 dark:text-slate-400">
                     <tr>
-                        <th class="px-3 py-3 border-b border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-50 dark:bg-slate-800 z-30 w-10 text-center shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">NO</th>
-                        <th class="px-3 py-3 border-b border-r border-slate-200 dark:border-slate-700 sticky left-[40px] bg-slate-50 dark:bg-slate-800 z-30 min-w-[200px] shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">NAMA SISWA</th>
-                        <th class="px-3 py-3 border-b border-r border-slate-200 dark:border-slate-700 sticky left-[240px] bg-slate-50 dark:bg-slate-800 z-30 min-w-[120px] shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">KELAS / {{ strtoupper($periodLabel) }}</th>
+                        <th class="px-3 py-3 border-b border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 w-10 text-center">NO</th>
+                        <th class="px-3 py-3 border-b border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[200px]">NAMA SISWA</th>
+                        <th class="px-3 py-3 border-b border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 min-w-[120px]">KELAS / {{ strtoupper($periodLabel) }}</th>
                         @foreach($mapels as $mapel)
                         <th class="px-2 py-2 border-b border-slate-200 dark:border-slate-700 text-center min-w-[60px]">{{ $mapel->nama_mapel }}</th>
                         @endforeach
@@ -373,39 +384,48 @@
     </table>
 
     <!-- Legend & Signature -->
-    <div class="mt-4 text-[10px]">
-        <div class="mb-4">
-            <strong>Keterangan:</strong><br>
-            1. Rata-Rapor (RR) diambil dari Rata-rata Nilai Rapor semester/kelas yang ditentukan.<br>
-            2. Rumus Nilai Akhir: <strong>NA = (Rapor Ã— {{ $bRapor }}%) + (Ujian Ã— {{ $bUjian }}%)</strong>.<br>
-            3. Kriteria Kelulusan: Rata-rata Nilai Akhir minimal <strong>{{ number_format($minLulus, 2) }}</strong>.
-        </div>
-        <div class="flex justify-end pr-12">
-            <div class="text-center">
+    <div class="mt-4 text-[10px] break-inside-avoid print:break-inside-avoid">
+        <div class="flex justify-between items-end">
+            <div class="mb-4 max-w-[60%]">
+                <strong>Keterangan:</strong><br>
+                1. Rata-Rapor (RR) diambil dari Rata-rata Nilai Rapor semester/kelas yang ditentukan.<br>
+                2. Rumus Nilai Akhir: <strong>NA = (Rapor × {{ $bRapor }}%) + (Ujian × {{ $bUjian }}%)</strong>.<br>
+                3. Kriteria Kelulusan: Rata-rata Nilai Akhir minimal <strong>{{ number_format($minLulus, 2) }}</strong>.
+            </div>
+
+            <div class="text-center w-[250px] pr-6">
                 @php
                     $hmTitle = 'Kepala Madrasah';
                     if ($jenjang === 'MI') $hmTitle = 'Kepala Madrasah Ibtidaiyah';
                     if ($jenjang === 'MTS') $hmTitle = 'Kepala Madrasah Tsanawiyah';
-                    if ($jenjang === 'MTS') $hmTitle = 'Kepala Madrasah Tsanawiyah';
 
-                    $hmName = $school->kepala_madrasah ?? '......................';
-                    $hmNip = $school->nip_kepala ?? '-';
+                    $key = strtolower($jenjang);
 
-                    if ($jenjang === 'MI') {
-                        $hmName = \App\Models\GlobalSetting::val('hm_name_mi') ?: $hmName;
-                        $hmNip = \App\Models\GlobalSetting::val('hm_nip_mi') ?: $hmNip;
-                    } elseif ($jenjang === 'MTS') {
-                         $hmName = \App\Models\GlobalSetting::val('hm_name_mts') ?: $hmName;
-                         $hmNip = \App\Models\GlobalSetting::val('hm_nip_mts') ?: $hmNip;
-                    } elseif ($jenjang === 'MTS') {
-                         $hmName = \App\Models\GlobalSetting::val('hm_name_mts') ?: $hmName;
-                         $hmNip = \App\Models\GlobalSetting::val('hm_nip_mts') ?: $hmNip;
+                    // Fetch Specific Identity for this Jenjang (MTS vs MI)
+                    $identity = \App\Models\IdentitasSekolah::where('jenjang', $jenjang)->first();
+
+                    if (!$identity) {
+                        $identity = $school;
                     }
+
+                    $hmName = $identity->kepala_madrasah ?? '......................';
+                    $hmNip = $identity->nip_kepala ?? '-';
+
+                    // Legacy/Fallback Logic
+                    if (empty($hmName) || $hmName == '......................') {
+                         if ($jenjang == 'MTS' && !empty($school->kepala_madrasah_mts)) {
+                            $hmName = $school->kepala_madrasah_mts;
+                            $hmNip = $school->nip_kepala_mts ?? $hmNip;
+                         }
+                    }
+
+                    // Simple Date (Masehi ONLY for DKN)
+                    $dateNow = \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
+                    $place = \App\Models\GlobalSetting::val('titimangsa_tempat_' . $key) ?? $school->kabupaten ?? $school->kota ?? 'Tempat';
                 @endphp
 
-                <p>{{ $school->kabupaten ?? 'Kabupaten' }}, {{ date('d F Y') }}</p>
-                <p>{{ $hmTitle }},</p>
-                <br><br><br>
+                <p class="mb-1">{{ $place }}, {{ $dateNow }}</p>
+                <p class="mb-16">{{ $hmTitle }},</p>
                 <p class="font-bold underline">{{ $hmName }}</p>
                 <p>NIP. {{ $hmNip }}</p>
             </div>

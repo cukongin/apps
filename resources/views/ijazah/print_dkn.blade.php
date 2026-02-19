@@ -170,26 +170,91 @@
         $jenjang = ($kelas->jenjang->kode ?? '') == 'MTS' || $kelas->tingkat_kelas > 6 ? 'MTS' : 'MI';
         $key = strtolower($jenjang);
 
-        // Fetch Headmaster from Global Settings (Priority)
-        $hmName = \App\Models\GlobalSetting::val("hm_name_$key");
-        $hmNip = \App\Models\GlobalSetting::val("hm_nip_$key");
+        // Fetch Specific Identity for this Jenjang (MTS vs MI)
+        // Data is stored in separate rows in identitas_sekolah table
+        $identity = \App\Models\IdentitasSekolah::where('jenjang', $jenjang)->first();
 
-        // Fallback to IdentitasSekolah if GlobalSetting is empty
-        if(empty($hmName)) $hmName = $school->nama_kepala_sekolah ?? '......................';
-        if(empty($hmNip)) $hmNip = $school->nip_kepala_sekolah ?? '-';
+        if (!$identity) {
+            // Fallback to default if specific jenjang identity not found
+            $identity = $school;
+        }
 
-        // Date (Indonesian Format)
-        $date = \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
-        $place = $school->kabupaten ?? $school->kota ?? 'Tempat';
+        $hmName = $identity->kepala_madrasah ?? '......................';
+
+        // Legacy/Fallback Logic (Just in case)
+        if (empty($hmName) || $hmName == '......................') {
+             if ($jenjang == 'MTS' && !empty($school->kepala_madrasah_mts)) {
+                $hmName = $school->kepala_madrasah_mts;
+             }
+        }
+
+        // Date (Hijri Top, Masehi Bottom)
+        $hijri = \App\Models\GlobalSetting::val('titimangsa_hijriyah_' . $key);
+        $masehi = \App\Models\GlobalSetting::val('titimangsa_' . $key) ?? \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
+
+        $place = \App\Models\GlobalSetting::val('titimangsa_tempat_' . $key) ?? $school->kabupaten ?? $school->kota ?? 'Tempat';
+
+        if (!empty($hijri)) {
+            $date1Raw = $hijri; // Row 1
+            $date2Raw = $masehi; // Row 2
+        } else {
+            $date1Raw = $masehi;
+            $date2Raw = null;
+        }
     @endphp
 
     <table style="width: 100%; margin-top: 30px; border: none; page-break-inside: avoid;">
         <tr>
             <td style="border: none; width: 65%;"></td>
             <td style="border: none; text-align: center;">
-                {{ $place }}, {{ $date }}<br>
+                 @php
+                    // Helper logic to parse dates
+                    $parseDate = function($dateStr) {
+                        $parts = explode(' ', trim($dateStr));
+                        if (count($parts) < 3) return ['day' => $dateStr, 'month' => '', 'year' => '', 'suffix' => ''];
+
+                        $day = array_shift($parts);
+                        $last = end($parts);
+                        $suffix = '';
+                        if (str_ends_with($last, '.') || strlen($last) <= 2) {
+                            $suffix = array_pop($parts);
+                        }
+                        $year = array_pop($parts);
+                        $month = implode(' ', $parts);
+                        return compact('day', 'month', 'year', 'suffix');
+                    };
+
+                    $d1 = $parseDate($date1Raw);
+                    $d2 = $date2Raw ? $parseDate($date2Raw) : null;
+                @endphp
+
+                <div style="display: inline-block; text-align: left;">
+                    <table style="border-collapse: collapse; white-space: nowrap;">
+                         {{-- Row 1: Hijri / Main Date --}}
+                        <tr class="leading-tight">
+                            <td class="pr-2 text-right" style="border: none; vertical-align: top;">{{ $place }},</td>
+                            <td class="px-1 text-center" style="border: none;">{{ $d1['day'] }}</td>
+                            <td class="px-1 text-left pl-2" style="border: none;">{{ $d1['month'] }}</td>
+                            <td class="px-1 text-center" style="border: none;">{{ $d1['year'] }}</td>
+                            <td class="pl-1 text-left" style="border: none;">{{ $d1['suffix'] }}</td>
+                        </tr>
+
+                        {{-- Row 2: Masehi (Optional) --}}
+                        @if($d2)
+                        <tr class="leading-tight">
+                            <td style="border: none;"></td> {{-- Empty Place Column --}}
+                            <td class="px-1 text-center" style="border: none;">{{ $d2['day'] }}</td>
+                            <td class="px-1 text-left pl-2" style="border: none;">{{ $d2['month'] }}</td>
+                            <td class="px-1 text-center" style="border: none;">{{ $d2['year'] }}</td>
+                            <td class="pl-1 text-left" style="border: none;">{{ $d2['suffix'] }}</td>
+                        </tr>
+                        @endif
+                    </table>
+                </div>
+
+                <br>
                 Kepala Madrasah,<br><br><br><br><br>
-                <strong>{{ strtoupper($hmName) }}</strong>
+                <strong>{{ $hmName }}</strong>
             </td>
         </tr>
     </table>

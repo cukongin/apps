@@ -67,16 +67,26 @@
     $bUjian = \App\Models\GlobalSetting::val('ijazah_bobot_ujian_' . $jkl, 40);
 
     // Headmaster Info (Class/Jenjang Level)
-    $defaultHm = $school->kepala_madrasah ? trim($school->kepala_madrasah) : '';
-    $defaultNip = $school->nip_kepala ? trim($school->nip_kepala) : '';
 
-    $hmName = $defaultHm ?: '......................';
-    $hmNip = $defaultNip ?: '-';
+    // Fetch Specific Identity for this Jenjang
+    // Data is stored in separate rows in identitas_sekolah table
+    $identity = \App\Models\IdentitasSekolah::where('jenjang', $jenjang)->first();
 
-    $settingHm = \App\Models\GlobalSetting::val('hm_name_' . $jkl);
-    $settingNip = \App\Models\GlobalSetting::val('hm_nip_' . $jkl);
-    if (!empty($settingHm)) $hmName = $settingHm;
-    if (!empty($settingNip)) $hmNip = $settingNip;
+    if (!$identity) {
+        // Fallback to default if specific jenjang identity not found
+        $identity = $school;
+    }
+
+    $hmName = $identity->kepala_madrasah ?? '......................';
+    $hmNip = $identity->nip_kepala ?? '-';
+
+    // Legacy/Fallback Logic (Just in case)
+    if (empty($hmName) || $hmName == '......................') {
+         if ($jenjang == 'MTS' && !empty($school->kepala_madrasah_mts)) {
+            $hmName = $school->kepala_madrasah_mts;
+            $hmNip = $school->nip_kepala_mts ?? $hmNip;
+         }
+    }
 @endphp
 
 @foreach($dataStudents as $index => $ds)
@@ -182,13 +192,20 @@
                     $place = $titimangsaPlace ?? \App\Models\GlobalSetting::val('titimangsa_transkrip_tempat_' . $jenjangKey)
                              ?? ($school->kabupaten ?? $school->kota ?? 'Tempat');
 
-                    // Date 1 (Main/Hijri)
-                    $date1Raw = !empty($titimangsa) ? $titimangsa : \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
+                    // Date Logic (Matched with Rapor)
+                    // We want Hijri on Top (Date 1) and Masehi on Bottom (Date 2)
 
-                    // Date 2 (Secondary/Masehi)
-                    // Checks Transkrip Specific 2nd Date, falls back to Rapor 2nd Date
-                    $date2Raw = \App\Models\GlobalSetting::val('titimangsa_transkrip_2_' . $jenjangKey)
-                                ?? \App\Models\GlobalSetting::val('titimangsa_2_' . $jenjangKey);
+                    // Fetch configured values
+                    $hijri = \App\Models\GlobalSetting::val('titimangsa_hijriyah_' . $jenjangKey); // New Key for Hijri
+                    $masehi = !empty($titimangsa) ? $titimangsa : \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y'); // Default Masehi
+
+                    if (!empty($hijri)) {
+                        $date1Raw = $hijri; // Row 1
+                        $date2Raw = $masehi; // Row 2
+                    } else {
+                        $date1Raw = $masehi;
+                        $date2Raw = null;
+                    }
                 @endphp
 
                 {{-- Wrapper: Inline Block to shrink-wrap content, Left Aligned Text, Floating in the Right Box --}}
@@ -210,11 +227,8 @@
                             return compact('day', 'month', 'year', 'suffix');
                         };
 
-                        $d1Raw = !empty($date1Raw) ? $date1Raw : '';
-                        $d2Raw = !empty($date2Raw) ? $date2Raw : '';
-
-                        $d1 = $parseDate($d1Raw);
-                        $d2 = $d2Raw ? $parseDate($d2Raw) : null;
+                        $d1 = $parseDate($date1Raw);
+                        $d2 = $date2Raw ? $parseDate($date2Raw) : null;
                     @endphp
 
                     {{-- Unified Table for Alignment --}}
@@ -258,7 +272,8 @@
                         {{-- Name --}}
                         <tr>
                             <td style="border: none;"></td>
-                            <td colspan="4" class="text-center font-bold" style="border: none;">{{ strtoupper($hmName) }}</td>
+                            {{-- REMOVED STRTOUPPER --}}
+                            <td colspan="4" class="text-center font-bold" style="border: none;">{{ $hmName }}</td>
                         </tr>
                     </table>
                 </div>
