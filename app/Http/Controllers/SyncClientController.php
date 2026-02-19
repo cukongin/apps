@@ -109,9 +109,13 @@ class SyncClientController extends Controller
             // Sync Siswa
             Siswa::unguard();
             foreach ($data['siswa'] as $item) {
-                // Sanitize: Remove relations that are not columns
-                if (isset($item['kelas'])) unset($item['kelas']);
-                if (isset($item['user'])) unset($item['user']); // Also remove user relation if present
+                // Sanitize: Remove relations/arrays that are not columns
+                unset($item['kelas'], $item['user'], $item['jenjang'], $item['rombel'], $item['jurusan']);
+
+                // Extra safety: Remove any other array values (nested relations)
+                foreach ($item as $key => $value) {
+                    if (is_array($value)) unset($item[$key]);
+                }
 
                 try {
                     Siswa::updateOrCreate(['id' => $item['id']], $item);
