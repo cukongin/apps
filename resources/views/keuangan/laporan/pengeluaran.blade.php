@@ -327,13 +327,15 @@
         function rotateIfLandscape(img) {
             // Check natural dimensions
             if (img.naturalWidth > img.naturalHeight) {
+                // Add class for Print CSS targeting
+                img.classList.add('is-landscape');
+
                 // Get container dimensions
                 var parent = img.parentElement;
                 var containerW = parent.clientWidth;
                 var containerH = parent.clientHeight;
 
-                // Swap dimensions for the unrotated element
-                // We want the unrotated image to act as if it is inside a container of size (H x W)
+                // Swap dimensions for the unrotated element (Screen View)
                 img.style.width = containerH + 'px';
                 img.style.height = containerW + 'px';
 
@@ -344,7 +346,6 @@
                 // Ensure image fits inside this new "swapped" box
                 img.style.objectFit = "contain";
 
-                // Rotate
                 img.style.transform = "rotate(-90deg)";
             }
         }
