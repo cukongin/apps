@@ -402,6 +402,12 @@ class SyncController extends Controller
 
                         if ($clientTime > $serverTime) {
                             // Client is newer -> Update Server
+
+                            // FIX: Preserve Server Photo if Client sends null/empty (Prevent Deletion)
+                            if ($table === 'siswa' && empty($clientRow['foto']) && !empty($serverRow['foto'])) {
+                                unset($clientRow['foto']);
+                            }
+
                             try {
                                 DB::table($table)->where('id', $id)->update($clientRow);
                                 $stats['incoming'][$table]++;
