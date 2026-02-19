@@ -42,7 +42,7 @@ class MasterStudentController extends Controller
                 });
             }
         } elseif ($tab == 'inactive') {
-            $query->whereIn('status_siswa', ['lulus', 'mutasi', 'keluar', 'non-aktif', 'meninggal']);
+            $query->whereIn('status_siswa', ['lulus', 'mutasi', 'keluar', 'non-aktif', 'meninggal', 'tanpa_keterangan']);
         }
 
         // Filter by Status (Additional specific filter if needed inside tab)
@@ -68,7 +68,7 @@ class MasterStudentController extends Controller
             'total' => Siswa::count(),
             'mi' => Siswa::whereHas('jenjang', function($q) { $q->where('kode', 'MI'); })->count(),
             'mts' => Siswa::whereHas('jenjang', function($q) { $q->where('kode', 'MTS'); })->count(),
-            'inactive' => Siswa::whereIn('status_siswa', ['lulus', 'mutasi', 'keluar', 'non-aktif', 'meninggal'])->count(),
+            'inactive' => Siswa::whereIn('status_siswa', ['lulus', 'mutasi', 'keluar', 'non-aktif', 'meninggal', 'tanpa_keterangan'])->count(),
             'new' => 0, // Default
             'all_active' => 0 // Default
         ];
