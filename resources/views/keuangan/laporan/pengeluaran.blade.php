@@ -266,20 +266,20 @@
 
     <!-- LAMPIRAN NOTA (Halaman Baru - Only if receipts exist) -->
     @if($totalReceipts > 0)
-    <div class="block break-before-page mt-8 w-full">
-        <div class="text-center mb-6 pt-4">
+    <div class="block print:break-before-page mt-8 w-full print:mt-0">
+        <div class="text-center mb-6 pt-8 print:pt-4">
             <h2 class="text-lg font-bold uppercase border-b-2 border-black inline-block pb-1">LAMPIRAN BUKTI TRANSAKSI</h2>
-            <p class="text-xs mt-1">{{ \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y') }}</p>
+            <p class="text-xs mt-1 text-gray-600 print:text-black">{{ \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y') }}</p>
         </div>
 
-        <!-- Grid 2 Kolom (4 Item per Halaman) -->
-        <div class="grid grid-cols-2 gap-4">
+        <!-- Grid Responsive: 1 col mobile, 3 tablet, 4 desktop. Print: 2 cols fixed -->
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 print:grid-cols-2 gap-6 print:gap-4 px-4 print:px-0">
             @foreach($groupedPengeluarans as $category => $items)
                 @foreach($items as $item)
                     @if($item->bukti_foto)
-                        <div class="border border-black p-2 break-inside-avoid flex flex-col h-[440px]">
+                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid">
                             <!-- Image Container -->
-                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-200 relative mb-2">
+                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-[400px]">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
                                      onload="rotateIfLandscape(this)"
                                      class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center"
@@ -287,15 +287,14 @@
                             </div>
 
                             <!-- Keterangan -->
-                            <div class="text-xs border-t border-black pt-2 bg-white z-10">
-                                <div class="font-bold text-sm truncate">{{ $item->judul }}</div>
-                                <div class="flex justify-between mt-1 text-black font-medium">
+                            <div class="text-xs border-t border-gray-100 print:border-black pt-2 bg-white z-10">
+                                <div class="font-bold text-sm truncate text-[#111812]">{{ $item->judul }}</div>
+                                <div class="flex justify-between mt-1 text-gray-600 print:text-black font-medium">
                                     <span>{{ \Carbon\Carbon::parse($item->tanggal_pengeluaran)->format('d M Y') }}</span>
-                                    <span class="font-bold">Rp {{ number_format($item->jumlah, 0, ',', '.') }}</span>
+                                    <span class="font-bold text-[#111812] print:text-black">Rp {{ number_format($item->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         </div>
-
                     @endif
                 @endforeach
             @endforeach
