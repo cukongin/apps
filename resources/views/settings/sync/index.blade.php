@@ -185,6 +185,10 @@
 
             <!-- Action Area -->
             <div class="flex flex-col justify-center items-center bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800 p-6 text-center">
+                @if(!env('SYNC_BASE_URL') || !env('SYNC_TOKEN'))
+                    <span class="material-symbols-outlined text-4xl text-rose-500 mb-2">signal_disconnected</span>
+                    <h4 class="font-bold text-slate-800 dark:text-white mb-2">Konfigurasi Belum Lengkap</h4>
+                    <p class="text-sm text-slate-500 mb-4">Silakan atur <code>SYNC_BASE_URL</code> dan <code>SYNC_TOKEN</code> pada file <code>.env</code> aplikasi.</p>
                 @else
                     <span class="material-symbols-outlined text-4xl text-blue-500 mb-2">sync_alt</span>
                     <h4 class="font-bold text-slate-800 dark:text-white mb-2">Smart Sync (Otomatis)</h4>
