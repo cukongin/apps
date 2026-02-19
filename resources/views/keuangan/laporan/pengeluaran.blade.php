@@ -278,9 +278,9 @@
             @foreach($groupedPengeluarans as $category => $items)
                 @foreach($items as $item)
                     @if($item->bukti_foto)
-                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:h-[440px] print:p-2">
+                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:h-[440px] print:p-0">
                             <!-- Image Container -->
-                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-full print:w-full print:mb-2">
+                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-full print:w-full print:mb-0">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
                                      onload="rotateIfLandscape(this)"
                                      class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center print:w-full print:h-full print:object-contain"
@@ -288,7 +288,7 @@
                             </div>
 
                             <!-- Keterangan -->
-                            <div class="text-xs border-t border-gray-100 print:border-black pt-1 bg-white z-10 print:text-[10pt] print:pt-2">
+                            <div class="text-xs border-t border-gray-100 print:border-black pt-1 bg-white z-10 print:text-[10pt] print:pt-2 print:px-2 print:pb-2">
                                 <div class="font-bold text-sm truncate text-[#111812] print:text-black">{{ $item->judul }}</div>
                                 <div class="flex justify-between mt-1 text-gray-600 print:text-black font-medium">
                                     <span>{{ \Carbon\Carbon::parse($item->tanggal_pengeluaran)->format('d M Y') }}</span>
