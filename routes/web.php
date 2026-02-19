@@ -162,6 +162,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('settings/sync', [App\Http\Controllers\SyncClientController::class, 'index'])->name('settings.sync.index');
         Route::post('settings/sync/pull', [App\Http\Controllers\SyncClientController::class, 'pullFullData'])->name('settings.sync.pull');
         Route::post('settings/sync/push', [App\Http\Controllers\SyncClientController::class, 'pushFullData'])->name('settings.sync.push');
+        Route::post('settings/sync/smart', [App\Http\Controllers\SyncClientController::class, 'syncOneClick'])->name('settings.sync.smart');
 
         // Class Management (Moved here for Security)
         Route::get('/classes', [ClassroomController::class, 'index'])->name('classes.index');

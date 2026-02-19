@@ -435,4 +435,79 @@ class SyncClientController extends Controller
             return redirect()->back()->with('error', 'Error Push Full: ' . $e->getMessage());
         }
     }
+    /**
+     * Smart One-Click Sync (Bi-Directional)
+     */
+    public function syncOneClick(Request $request)
+    {
+        $baseUrl = config('app.sync_base_url', env('SYNC_BASE_URL'));
+        $token = config('app.sync_token', env('SYNC_TOKEN'));
+
+        if (!$baseUrl || !$token) {
+            return redirect()->back()->with('error', 'Gagal: URL Server atau Token belum dikonfigurasi!');
+        }
+
+        try {
+            // 1. Gather ALL Local Data
+            $tables = $this->getSyncableTables();
+            $payload = [];
+
+            foreach ($tables as $table) {
+                $payload[$table] = DB::table($table)->get()->toArray();
+            }
+
+            // 2. Send to Server (Smart Sync Endpoint)
+            $response = Http::timeout(600) // Longer timeout for processing comparisons
+                            ->withHeaders(['X-Sync-Token' => $token])
+                            ->post($baseUrl . '/api/sync/smart-sync', $payload);
+
+            if ($response->successful()) {
+                $data = $response->json('data') ?? []; // Rows to update locally
+                $serverStats = $response->json('stats') ?? ['incoming' => [], 'outgoing' => []];
+
+                // 3. Apply Updates from Server (Outgoing from Server -> Incoming to Client)
+                DB::beginTransaction();
+                DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+
+                foreach ($data as $table => $rows) {
+                    if (is_array($rows)) {
+                        foreach ($rows as $row) {
+                            try {
+                                DB::table($table)->updateOrInsert(['id' => $row['id']], (array)$row);
+                            } catch (\Exception $e) {
+                                // Log warning
+                            }
+                        }
+                    }
+                }
+
+                DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+                DB::commit();
+
+                // 4. Prepare Summary for View
+                $summary = [];
+                $allTables = array_unique(array_merge(array_keys($serverStats['incoming']), array_keys($serverStats['outgoing'])));
+
+                foreach ($allTables as $table) {
+                    $sent = $serverStats['incoming'][$table] ?? 0; // Client -> Server (Accepted)
+                    $received = $serverStats['outgoing'][$table] ?? 0; // Server -> Client (Received)
+
+                    if ($sent > 0 || $received > 0) {
+                        $summary[Str::headline($table)] = [
+                            'sent' => $sent,
+                            'received' => $received
+                        ];
+                    }
+                }
+
+                return redirect()->back()->with('success', 'Smart Sync Selesai! Pertukaran data berhasil.')->with('smart_sync_summary', $summary);
+
+            } else {
+                 throw new \Exception('Gagal Sync: ' . Str::limit(strip_tags($response->body()), 150));
+            }
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error Smart Sync: ' . $e->getMessage());
+        }
+    }
 }
