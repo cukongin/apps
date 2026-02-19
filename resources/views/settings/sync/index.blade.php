@@ -144,16 +144,7 @@
         @endif
     @endif
 
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible show fade">
-            <div class="alert-body">
-                <button class="close" data-dismiss="alert">
-                    <span>&times;</span>
-                </button>
-                <b>Gagal:</b> {{ session('error') }}
-            </div>
-        </div>
-    @endif
+
 
     <!-- Connection Status Card -->
     <div class="card-boss !p-6">
