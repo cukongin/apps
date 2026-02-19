@@ -6,15 +6,18 @@
     <style>
         @media print {
             @page {
-                margin: 0.5cm;
-                margin-top: 1cm; /* User Req: Page 2+ Top Margin 1cm */
+                /* User Req: Margin Kanan Kiri 1.5cm */
+                margin-top: 1cm;
+                margin-bottom: 0.5cm;
+                margin-left: 1.5cm;
+                margin-right: 1.5cm;
             }
             @page :first {
                 margin-top: 0.5cm; /* Keep Page 1 compact */
             }
             body {
                 font-family: sans-serif !important;
-                font-size: 10pt !important;
+                font-size: 11pt !important; /* User Req: Font 11 */
                 line-height: 1 !important;
             }
             .print-fix-image {
@@ -51,9 +54,11 @@
                 padding: 0 !important;
                 margin: 0 !important;
                 border: none !important;
+                position: relative !important; /* Needed for absolute child */
+                overflow: hidden !important;
             }
             table, td, th {
-                font-size: 10pt !important;
+                font-size: 11pt !important; /* User Req: Font 11 */
                 padding-top: 4px !important;
                 padding-bottom: 4px !important;
             }
