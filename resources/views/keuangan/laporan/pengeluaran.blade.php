@@ -272,15 +272,15 @@
             <p class="text-xs mt-1 text-gray-600 print:text-black">{{ \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y') }} - {{ \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y') }}</p>
         </div>
 
-        <!-- Grid Responsive: 1 col mobile, 3 tablet, 4 desktop. Print: 2 cols fixed -->
+        <!-- Grid Responsive: 1 col mobile, 3 tablet, 4 desktop. Print: 2 cols fixed & Centered -->
         <div class="bg-white dark:bg-[#1a2e1d] rounded-xl shadow-sm border border-[#dbe6dd] dark:border-[#2a3a2d] p-6 print:border-none print:shadow-none print:p-0">
-            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 print:grid-cols-2 gap-6 print:gap-2">
+            <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 print:grid-cols-2 gap-6 print:gap-4 print:flex print:flex-wrap print:justify-center">
             @foreach($groupedPengeluarans as $category => $items)
                 @foreach($items as $item)
                     @if($item->bukti_foto)
-                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:h-[440px] print:p-0">
+                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:w-[7.7cm] print:h-[11.7cm] print:p-0">
                             <!-- Image Container -->
-                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:h-full print:w-full print:mb-0">
+                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:w-full print:h-[10cm] print:mb-0">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
                                      onload="rotateIfLandscape(this)"
                                      class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center print:w-full print:h-full print:object-cover print:object-top"
@@ -288,7 +288,7 @@
                             </div>
 
                             <!-- Keterangan -->
-                            <div class="text-xs border-t border-gray-100 print:border-black pt-1 bg-white z-10 print:text-[10pt] print:pt-2 print:px-2 print:pb-2">
+                            <div class="text-xs border-t border-gray-100 print:border-black pt-1 bg-white z-10 print:text-[10pt] print:pt-1 print:px-1 print:pb-1">
                                 <div class="font-bold text-sm truncate text-[#111812] print:text-black">{{ $item->judul }}</div>
                                 <div class="flex justify-between mt-1 text-gray-600 print:text-black font-medium">
                                     <span>{{ \Carbon\Carbon::parse($item->tanggal_pengeluaran)->format('d M Y') }}</span>
