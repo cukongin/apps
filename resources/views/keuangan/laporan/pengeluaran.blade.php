@@ -58,7 +58,7 @@
                 overflow: hidden !important;
             }
             table, td, th {
-                font-size: 11pt !important; /* User Req: Font 11 */
+                font-size: 10pt !important; /* User Req: Font 11 */
                 padding-top: 4px !important;
                 padding-bottom: 4px !important;
             }
@@ -319,7 +319,10 @@
             @foreach($groupedPengeluarans as $category => $items)
                 @foreach($items as $item)
                     @if($item->bukti_foto)
-                        <div class="bg-white border border-gray-200 print:border-black p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:w-[7.7cm] print:h-[11.7cm] print:p-0">
+                        <div class="bg-white border border-gray-200 p-2 rounded-lg shadow-sm print:shadow-none print:rounded-none flex flex-col break-inside-avoid print:w-[7.7cm] print:h-[11.7cm] print:p-0 relative print:border-none">
+                            <!-- Overlay Border for Print (Ensures visibility) -->
+                            <div class="hidden print:block absolute inset-0 border border-black z-50 pointer-events-none"></div>
+
                             <!-- Image Container -->
                             <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 print:bg-white border border-gray-100 print:border-gray-200 relative mb-2 rounded aspect-[3/4] print:aspect-auto print:mb-0 print-fix-container">
                                 <img src="/bukti/{{ $item->bukti_foto }}"
