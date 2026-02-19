@@ -277,12 +277,25 @@
             @foreach($groupedPengeluarans as $category => $items)
                 @foreach($items as $item)
                     @if($item->bukti_foto)
+                        <div class="border border-black p-2 break-inside-avoid flex flex-col h-[440px]">
+                            <!-- Image Container -->
+                            <div class="flex-grow overflow-hidden flex items-center justify-center bg-gray-50 border border-gray-200 relative mb-2">
+                                <img src="/bukti/{{ $item->bukti_foto }}"
+                                     onload="rotateIfLandscape(this)"
+                                     class="max-h-full max-w-full object-contain transition-transform duration-0 origin-center"
+                                     alt="Struk">
+                            </div>
+
+                            <!-- Keterangan -->
+                            <div class="text-xs border-t border-black pt-2 bg-white z-10">
+                                <div class="font-bold text-sm truncate">{{ $item->judul }}</div>
                                 <div class="flex justify-between mt-1 text-black font-medium">
                                     <span>{{ \Carbon\Carbon::parse($item->tanggal_pengeluaran)->format('d M Y') }}</span>
                                     <span class="font-bold">Rp {{ number_format($item->jumlah, 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         </div>
+
                     @endif
                 @endforeach
             @endforeach
