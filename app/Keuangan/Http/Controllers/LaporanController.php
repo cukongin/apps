@@ -84,6 +84,7 @@ class LaporanController extends \App\Http\Controllers\Controller
                     'group_type' => 'pengeluaran',
                     'description' => $item->judul . ' - ' . $item->deskripsi,
                     'amount' => $item->jumlah,
+                    'evidence' => $item->bukti_foto, // Add photo path
                     'raw_data' => $item
                 ];
             });

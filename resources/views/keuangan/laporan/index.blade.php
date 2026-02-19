@@ -322,6 +322,12 @@
                             </td>
                             <td class="px-6 py-4 text-sm text-[#4a5568] dark:text-gray-300 max-w-xs truncate" title="{{ $item['description'] }}">
                                 {{ $item['description'] }}
+                                @if(isset($item['evidence']) && $item['evidence'])
+                                    <br>
+                                    <a href="/bukti/{{ $item['evidence'] }}" target="_blank" class="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-1 print:hidden">
+                                        <span class="material-symbols-outlined text-[14px]">image</span> Lihat Struk
+                                    </a>
+                                @endif
                             </td>
                             <td class="px-6 py-4 text-sm font-bold text-[#111812] dark:text-white text-right">
                                 @if($item['type'] == 'in')
