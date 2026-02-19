@@ -28,13 +28,13 @@
 <div class="space-y-6 print:hidden">
 
     <!-- Top Bar -->
-    <div class="print:hidden px-6 py-5 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 flex flex-col md:flex-row justify-between md:items-center gap-4 relative">
+    <div class="print:hidden px-4 md:px-6 py-4 md:py-5 bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 flex flex-col md:flex-row justify-between md:items-center gap-4 relative">
         <div class="flex items-center gap-4">
             <a href="{{ route('tu.dkn.index') }}" class="btn-boss bg-white dark:bg-slate-800 text-slate-500 hover:text-primary dark:hover:text-primary border border-slate-200 dark:border-slate-700 p-2.5 !rounded-xl">
                 <span class="material-symbols-outlined">arrow_back</span>
             </a>
             <div>
-                <h1 class="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3 tracking-tight">
+                <h1 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3 tracking-tight">
                     <span class="bg-gradient-to-r from-primary to-emerald-500 text-transparent bg-clip-text">Arsip DKN</span>
                 </h1>
                 <div class="flex items-center gap-2 mt-1">
@@ -46,12 +46,12 @@
             </div>
         </div>
 
-        <div class="flex items-center gap-3">
-             <a href="{{ route('tu.dkn.export_excel', $kelas->id) }}" class="btn-boss bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 flex items-center gap-2 shadow-sm shadow-emerald-200">
+        <div class="flex items-center gap-3 flex-wrap">
+             <a href="{{ route('tu.dkn.export_excel', $kelas->id) }}" class="btn-boss bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 flex items-center gap-2 shadow-sm shadow-emerald-200 w-full md:w-auto justify-center">
                 <span class="material-symbols-outlined text-[18px]">table_view</span> Download Excel
             </a>
             {{-- Print Button (Trigger Browser Print) --}}
-            <button onclick="window.print()" class="btn-boss bg-white border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 shadow-sm">
+            <button onclick="window.print()" class="btn-boss bg-white border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2 shadow-sm w-full md:w-auto justify-center">
                  <span class="material-symbols-outlined text-[18px]">print</span> Cetak
             </button>
         </div>
@@ -65,8 +65,88 @@
 
     <!-- Stats Section Removed (Empty) -->
 
-    <!-- Screen Table (Modern, Sticky, Scrollable) -->
-    <div class="card-boss !p-0 overflow-hidden flex flex-col">
+    <!-- ========================================== -->
+    <!-- MOBILE VIEW (Simple Cards) - Block on Mobile, Hidden on Desktop -->
+    <!-- ========================================== -->
+    <div class="block md:hidden space-y-4 px-4 pb-10">
+        @foreach($dknData as $index => $row)
+            @php
+                // Calculate Logic
+                $summary = $row['summary'];
+                $avgNA = $summary['averages']['na'] ?? 0;
+
+                // Status Logic
+                $finalStatus = 'LULUS';
+                $isPass = $avgNA >= $minLulus;
+
+                // Veto Logic
+                $sId = $row['student']->id;
+                $promoRecord = $promotionDecisions[$sId] ?? null;
+                $promoStatus = $promoRecord->final_decision ?? null;
+                $isVetoed = in_array($promoStatus, ['not_graduated', 'retained']);
+
+                if ($isVetoed) {
+                    $isPass = false;
+                    $finalStatus = 'TIDAK LULUS';
+                } elseif (!$isPass) {
+                    $finalStatus = 'TIDAK LULUS';
+                }
+            @endphp
+
+            <div x-data="{ open: false }" class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden transition-all duration-300">
+                <!-- Card Header (Clickable) -->
+                <div @click="open = !open" class="p-4 flex items-center justify-between cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                    <div class="flex items-center gap-4">
+                        <div class="flex-shrink-0 w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-500 dark:text-slate-400">
+                            {{ $index + 1 }}
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 dark:text-white line-clamp-1">{{ $row['student']->nama_lengkap }}</h3>
+                            <div class="flex items-center gap-2 mt-1">
+                                 <div class="px-2 py-0.5 rounded text-[10px] font-bold {{ $isPass ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/30 dark:text-rose-400' }}">
+                                    {{ $finalStatus }}
+                                </div>
+                                <span class="text-xs text-slate-500 dark:text-slate-400">Rata-rata: <strong>{{ number_format($avgNA, 2) }}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Chevron -->
+                    <span class="material-symbols-outlined text-slate-400 transition-transform duration-300" :class="open ? 'rotate-180' : ''">expand_more</span>
+                </div>
+
+                <!-- Card Body (Details) -->
+                <div x-show="open" x-collapse class="bg-slate-50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 p-4">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Detail Nilai Akhir (Rapor + Ujian)</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        @foreach($mapels as $mapel)
+                            @php
+                                $score = $row['summary']['na'][$mapel->id] ?? 0;
+                                $isGood = $score >= $minLulus;
+                            @endphp
+                            <div class="flex justify-between items-center p-2 rounded bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
+                                <span class="text-xs text-slate-600 dark:text-slate-300 line-clamp-1 truncate mr-2" title="{{ $mapel->nama_mapel }}">{{ $mapel->nama_mapel }}</span>
+                                <span class="text-xs font-bold {{ $isGood ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400' }}">
+                                    {{ number_format($score, 0) }}
+                                </span>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    @if($isVetoed)
+                        <div class="mt-4 p-3 bg-rose-50 dark:bg-rose-900/20 border border-rose-100 dark:border-rose-900/30 rounded-lg">
+                            <p class="text-xs text-rose-600 dark:text-rose-400 font-bold">⚠️ Catatan Kelulusan:</p>
+                            <p class="text-xs text-rose-500 dark:text-rose-400 mt-1">Siswa ini dinyatakan TIDAK LULUS melalui keputusan rapat dewan guru (Veto).</p>
+                        </div>
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    </div>
+
+    <!-- ========================================== -->
+    <!-- DESKTOP VIEW (Full Table) - Hidden on Mobile, Block on Desktop -->
+    <!-- ========================================== -->
+    <div class="hidden md:block card-boss !p-0 overflow-hidden flex flex-col">
         <div class="overflow-auto relative max-h-[75vh] custom-scrollbar">
             <table class="w-full text-left text-sm border-collapse">
                 <thead class="bg-slate-50 dark:bg-slate-800/80 uppercase text-[10px] font-bold text-slate-600 dark:text-slate-400">

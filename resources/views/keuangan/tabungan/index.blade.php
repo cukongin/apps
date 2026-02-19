@@ -200,7 +200,7 @@
                          x-transition:leave="transition ease-in duration-200"
                          x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
                          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-                         class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#1a2c1d] text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                         class="relative transform overflow-hidden rounded-2xl bg-white dark:bg-[#1a2c1d] text-left shadow-xl transition-all w-full sm:my-8 sm:w-full sm:max-w-lg">
                         <form action="{{ route('keuangan.tabungan.store', $santri->id) }}" method="POST">
                             @csrf
                             <input type="hidden" name="tipe" x-model="modalType">

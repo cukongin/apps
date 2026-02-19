@@ -6,19 +6,19 @@
 <div class="flex-1 flex flex-col h-full overflow-hidden">
     <!-- Header -->
     <div class="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-b border-slate-200/50 dark:border-slate-700/50 sticky top-0 z-20">
-        <div class="max-w-6xl mx-auto px-8 py-6 flex justify-between items-center">
+        <div class="max-w-6xl mx-auto px-4 md:px-8 py-4 md:py-6 flex flex-col md:flex-row justify-between md:items-center gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-slate-800 dark:text-white">Kelola Nilai Ijazah (DKN)</h1>
-                <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Pilih kelas tingkat akhir untuk mengelola nilai ujian dan ijazah.</p>
+                <h1 class="text-xl md:text-2xl font-bold text-slate-800 dark:text-white">Kelola Nilai Ijazah (DKN)</h1>
+                <p class="text-slate-500 dark:text-slate-400 text-xs md:text-sm mt-1">Pilih kelas tingkat akhir untuk mengelola nilai ujian dan ijazah.</p>
             </div>
-            <a href="{{ route('tu.dashboard') }}" class="btn-boss bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 flex items-center gap-2">
+            <a href="{{ route('tu.dashboard') }}" class="btn-boss bg-slate-100 hover:bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 flex items-center justify-center gap-2 w-full md:w-auto">
                 <span class="material-symbols-outlined text-[18px]">arrow_back</span> Kembali
             </a>
         </div>
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-y-auto p-8 scroll-smooth custom-scrollbar">
+    <div class="flex-1 overflow-y-auto p-4 md:p-8 scroll-smooth custom-scrollbar">
         <div class="max-w-6xl mx-auto">
 
             <div class="flex items-center gap-3 mb-6">
