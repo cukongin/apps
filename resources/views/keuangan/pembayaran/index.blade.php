@@ -372,25 +372,52 @@
                                 fetch(form.action, {
                                     method: 'POST',
                                     headers: {
+                                        // Jangan pakai 'X-Requested-With' karena back() kadang tidak sadar AJAX
+                                        // Atau bisa biayarkan saja tapi kita tangani JSON errornya.
                                         'X-Requested-With': 'XMLHttpRequest',
                                         'Accept': 'application/json',
                                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                                     },
                                     body: formData
                                 })
-                                .then(response => response.json())
+                                .then(response => {
+                                    if(response.redirected) {
+                                        return { success: true }; // Kalau auto-redirect dari laravel, anggap berhasil
+                                    }
+                                    if(response.ok) {
+                                        // Coba parse json
+                                        return response.text().then(text => {
+                                            try {
+                                                return JSON.parse(text);
+                                            } catch (e) {
+                                                return { success: true }; // Kalau dikasih halaman HTML padahal status 200, sukses
+                                            }
+                                        });
+                                    }
+                                    throw new Error('Server Return Bad Status');
+                                })
                                 .then(data => {
-                                    if(data.success) {
+                                    if(data && data.success) {
                                         closePaymentModal();
 
-                                        // Custom Premium Notification (Refactored to Global Toast)
-                                        window.Toast.fire({
-                                            icon: 'success',
-                                            title: 'Pembayaran Berhasil!',
-                                            background: '#ecfdf5', // emerald-50
-                                            color: '#065f46', // emerald-900
-                                            iconColor: '#10b981' // emerald-500
-                                        });
+                                        // Fallback if Toast is undefined
+                                        if (typeof window.Toast !== 'undefined') {
+                                            window.Toast.fire({
+                                                icon: 'success',
+                                                title: 'Pembayaran Berhasil!',
+                                                background: '#ecfdf5',
+                                                color: '#065f46',
+                                                iconColor: '#10b981'
+                                            });
+                                        } else {
+                                            Swal.fire({
+                                                icon: 'success',
+                                                title: 'Berhasil!',
+                                                text: 'Pembayaran berhasil diproses.',
+                                                timer: 2000,
+                                                showConfirmButton: false
+                                            });
+                                        }
 
                                         if(typeof currentClassDetailsId !== 'undefined') {
                                             loadClassDetails(currentClassDetailsId);
@@ -399,7 +426,7 @@
                                         Swal.fire({
                                             icon: 'error',
                                             title: 'Gagal!',
-                                            text: data.error || 'Terjadi kesalahan.',
+                                            text: data.error || data.message || 'Terjadi kesalahan pada data.',
                                             confirmButtonColor: '#d33'
                                         });
                                         btn.disabled = false;
@@ -407,11 +434,11 @@
                                     }
                                 })
                                 .catch(err => {
-                                    console.error(err);
+                                    console.error('AJAX/JS Error:', err);
                                     Swal.fire({
                                         icon: 'error',
-                                        title: 'Error Koneksi',
-                                        text: 'Gagal memproses pembayaran.',
+                                        title: 'Peringatan',
+                                        text: 'Gagal: ' + err.message,
                                         confirmButtonColor: '#d33'
                                     });
                                     btn.disabled = false;

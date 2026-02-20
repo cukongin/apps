@@ -24,13 +24,17 @@
                     </div>
                 </div>
                 <div class="flex gap-3">
+                    <form action="{{ route('keuangan.santri.keuangan.sync', $santri->id) }}" method="POST" onsubmit="return confirm('Mulai ulang kalkulasi tagihan dan perbaiki diskon bermasalah pada siswa ini?');">
+                        @csrf
+                        <button type="submit" class="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white rounded-lg font-bold text-sm shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5">
+                            <span class="material-symbols-outlined text-lg">sync</span>
+                            Sync Tagihan
+                        </button>
+                    </form>
                     <a href="{{ route('keuangan.santri.index') }}" class="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-300 dark:bg-transparent dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-bold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                         <span class="material-symbols-outlined text-lg">arrow_back</span>
                         Kembali
                     </a>
-
-
-                </div>
             </div>
         </div>
 

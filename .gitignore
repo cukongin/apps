@@ -23,7 +23,7 @@ yarn-error.log
 
 # Debug & Temp Files
 /dist_hostinger
-/debug_archive
+/
 composer.phar
 composer-setup.php
 check_*.php

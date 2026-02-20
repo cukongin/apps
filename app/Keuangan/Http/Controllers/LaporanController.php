@@ -49,17 +49,13 @@ class LaporanController extends \App\Http\Controllers\Controller
             })->values();
 
         // 1.B SUBSIDI (Informational Only)
-        // 1.B SUBSIDI (Informational Only)
-        // Corrected Logic: Calculate Implicit Discount (Standard Fee - Billed Amount)
-        // Because 'Subsidi' transactions might not exist in the database.
-        $subsidiDetails = \App\Keuangan\Models\Tagihan::with(['siswa.kelas', 'jenisBiaya'])
-            ->join('jenis_biayas', 'tagihans.jenis_biaya_id', '=', 'jenis_biayas.id')
-            ->whereBetween('tagihans.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereRaw('tagihans.jumlah < jenis_biayas.jumlah')
-            ->select('tagihans.*', \Illuminate\Support\Facades\DB::raw('(jenis_biayas.jumlah - tagihans.jumlah) as nilai_subsidi'))
+        // Fetch explicit 'Subsidi' transactions based directly on the Transaksi table
+        $subsidiDetails = Transaksi::with(['tagihan.siswa.kelas.level', 'tagihan.jenisBiaya'])
+            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->where('metode_pembayaran', 'Subsidi')
             ->get();
 
-        $totalSubsidi = $subsidiDetails->sum('nilai_subsidi');
+        $totalSubsidi = $subsidiDetails->sum('jumlah_bayar');
 
         // 2. PEMASUKAN LAIN
         $pemasukanLain = Pemasukan::whereBetween('tanggal_pemasukan', [$startDate, $endDate])
@@ -308,46 +304,14 @@ class LaporanController extends \App\Http\Controllers\Controller
     }
 
     public function santri(Request $request) {
-        // ... (Legacy Method) ...
-        return $this->santriLegacy($request);
-    }
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
 
-    public function pengeluaran(Request $request) {
-         // ... (Legacy Method) ...
-         return $this->pengeluaranLegacy($request);
-    }
-
-    public function tunggakan(Request $request) {
         $query = Transaksi::with(['tagihan.siswa.kelas.level', 'tagihan.jenisBiaya'])
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
-        $realTransaksis = (clone $query)->get();
-
-        // 2. Implicit Subsidies (Virtual Transactions)
-        $implicitSubsidies = \App\Keuangan\Models\Tagihan::with(['siswa.kelas.level', 'jenisBiaya'])
-            ->join('jenis_biayas', 'tagihans.jenis_biaya_id', '=', 'jenis_biayas.id')
-            ->whereBetween('tagihans.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->whereRaw('tagihans.jumlah < jenis_biayas.jumlah')
-            ->select('tagihans.*', \Illuminate\Support\Facades\DB::raw('(jenis_biayas.jumlah - tagihans.jumlah) as nilai_subsidi'))
-            ->get()
-            ->map(function($tagihan) {
-                // Create a Virtual Transaction Object
-                $t = new Transaksi();
-                $t->id = 'sub_' . $tagihan->id; // Fake ID
-                $t->tagihan_id = $tagihan->id;
-                $t->jumlah_bayar = $tagihan->nilai_subsidi;
-                $t->metode_pembayaran = 'Subsidi';
-                $t->keterangan = 'Otomatis: Keringanan Biaya';
-                $t->created_at = $tagihan->created_at;
-
-                // Manually set relation to avoid needing to query again
-                $t->setRelation('tagihan', $tagihan);
-
-                return $t;
-            });
-
-        // 3. Merge & Sort
-        $allTransaksis = $realTransaksis->concat($implicitSubsidies)->sortByDesc('created_at');
+        // Only real transactions, since Subsidies are now recorded explicitly in the same table.
+        $allTransaksis = (clone $query)->orderBy('created_at', 'desc')->get();
 
         // Stats
         $summary = $allTransaksis->groupBy(function($item) { return $item->tagihan->jenisBiaya->nama ?? 'Lainnya'; })
@@ -401,7 +365,7 @@ class LaporanController extends \App\Http\Controllers\Controller
         return view('keuangan.laporan.santri', compact('transaksis', 'groupedTransaksis', 'printRecap', 'startDate', 'endDate', 'summary', 'totalPemasukanSantri', 'totalCash', 'totalSubsidi'));
     }
 
-    private function pengeluaranLegacy($request) {
+    public function pengeluaran(Request $request) {
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
 
@@ -429,7 +393,7 @@ class LaporanController extends \App\Http\Controllers\Controller
         return view('keuangan.laporan.pengeluaran', compact('pengeluarans', 'groupedPengeluarans', 'printRecap', 'startDate', 'endDate', 'summary', 'totalPengeluaran'));
     }
 
-    private function tunggakanLegacy($request) {
+    public function tunggakan(Request $request) {
          $activeYear = \App\Models\TahunAjaran::where('status', 'aktif')->first();
         $kelasOptions = \App\Models\Kelas::where('id_tahun_ajaran', $activeYear->id ?? 0)->orderBy('nama_kelas')->get();
         $levels = ['TPQ', 'Ula', 'Wustho', 'Aliya'];

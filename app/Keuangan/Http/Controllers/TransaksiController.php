@@ -184,28 +184,21 @@ class TransaksiController extends \App\Http\Controllers\Controller
             \DB::transaction(function () use ($request, $transaksi) {
                 $tagihan = $transaksi->tagihan;
 
-                // Revert old payment from tagihan
-                $tagihan->terbayar -= $transaksi->jumlah_bayar;
+                // Validate new amount against real sisa tagihan (excluding current payment)
+                $realSisa = $tagihan->jumlah - ($tagihan->terbayar - $transaksi->jumlah_bayar);
 
-                // Validate new amount
-                $maxPayable = $tagihan->jumlah - $tagihan->terbayar;
-
-                // Allow small epsilon diff for float? Using integer for rupiah is safer.
-                // Assuming integer DB columns for amounts.
-                if ($request->jumlah_bayar > $maxPayable) {
-                     throw new \Exception('Jumlah pembayaran melebihi sisa tagihan saat ini (Max: Rp ' . number_format($maxPayable, 0, ',', '.') . ')');
+                if ($request->jumlah_bayar > $realSisa) {
+                     throw new \Exception('Jumlah pembayaran melebihi sisa tagihan saat ini (Max: Rp ' . number_format($realSisa, 0, ',', '.') . ')');
                 }
 
-                // Apply new payment
-                $tagihan->terbayar += $request->jumlah_bayar;
-
-                \App\Keuangan\Services\BillService::updateStatus($tagihan);
-
-                // Update Transaction
+                // 1. Update Transaction First
                 $transaksi->update([
                     'jumlah_bayar' => $request->jumlah_bayar,
                     'keterangan' => $request->keterangan,
                 ]);
+
+                // 2. Recalculate Tagihan Data and Status securely from DB sum
+                \App\Keuangan\Services\BillService::updateStatus($tagihan);
             });
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
@@ -223,13 +216,7 @@ class TransaksiController extends \App\Http\Controllers\Controller
             \DB::transaction(function () use ($transaksi) {
                 $tagihan = $transaksi->tagihan;
 
-                // Revert payment
-                $tagihan->terbayar -= $transaksi->jumlah_bayar;
-                $tagihan->save(); // Save the tagihan change
-
-                \App\Keuangan\Services\BillService::updateStatus($tagihan);
-
-                // If paid via Tabungan, refund the balance
+                // 1. If paid via Tabungan, refund the balance first
                 if ($transaksi->metode_pembayaran == 'tabungan') {
                     $siswa = $tagihan->siswa;
                     $siswa->saldo_tabungan += $transaksi->jumlah_bayar;
@@ -245,7 +232,11 @@ class TransaksiController extends \App\Http\Controllers\Controller
                     ]);
                 }
 
+                // 2. Delete the Transaction Record
                 $transaksi->delete();
+
+                // 3. Recalculate Tagihan Data and Status securely from DB sum
+                \App\Keuangan\Services\BillService::updateStatus($tagihan);
             });
 
             // Force clear view cache to ensure Dashboard and Recap update immediately (Fix for Hostinger)
@@ -279,13 +270,7 @@ class TransaksiController extends \App\Http\Controllers\Controller
                 foreach ($transactions as $transaksi) {
                     $tagihan = $transaksi->tagihan;
 
-                    // Revert payment
-                    $tagihan->terbayar -= $transaksi->jumlah_bayar;
-                    $tagihan->save();
-
-                    \App\Keuangan\Services\BillService::updateStatus($tagihan);
-
-                    // If paid via Tabungan, refund the balance
+                    // 1. If paid via Tabungan, refund the balance
                     if ($transaksi->metode_pembayaran == 'tabungan') {
                         $siswa = $tagihan->siswa;
                         $siswa->saldo_tabungan += $transaksi->jumlah_bayar;
@@ -301,7 +286,11 @@ class TransaksiController extends \App\Http\Controllers\Controller
                         ]);
                     }
 
+                    // 2. Delete the Transaction Record
                     $transaksi->delete();
+
+                    // 3. Recalculate Tagihan Data and Status securely from DB sum
+                    \App\Keuangan\Services\BillService::updateStatus($tagihan);
                     $count++;
                 }
             });
@@ -318,10 +307,18 @@ class TransaksiController extends \App\Http\Controllers\Controller
 
     public function store(Request $request, $id)
     {
-        $request->validate([
+        // Custom Validation to handle AJAX properly
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
             'bills' => 'required|array', // Array of {tagihan_id => nominal}
             'metode' => 'required|in:tunai,tabungan',
         ]);
+
+        if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson() || $request->headers->has('X-Requested-With')) {
+                return response()->json(['success' => false, 'error' => $validator->errors()->first()]);
+            }
+            return back()->withErrors($validator)->withInput();
+        }
 
         $siswa = \App\Models\Siswa::findOrFail($id);
         $totalBayarNeeded = 0;
@@ -342,6 +339,9 @@ class TransaksiController extends \App\Http\Controllers\Controller
                 $sisa = $tagihan->jumlah - $tagihan->terbayar;
 
                 if ($nominal > $sisa) {
+                    if ($request->ajax() || $request->wantsJson() || $request->headers->has('X-Requested-With')) {
+                        return response()->json(['success' => false, 'error' => 'Pembayaran melebihi sisa tagihan untuk ' . $tagihan->jenisBiaya->nama]);
+                    }
                     return back()->with('error', 'Pembayaran melebihi sisa tagihan untuk ' . $tagihan->jenisBiaya->nama);
                 }
 
@@ -354,12 +354,18 @@ class TransaksiController extends \App\Http\Controllers\Controller
         }
 
         if ($totalBayarNeeded == 0) {
+            if ($request->ajax() || $request->wantsJson() || $request->headers->has('X-Requested-With')) {
+                return response()->json(['success' => false, 'error' => 'Belum ada tagihan yang dipilih atau nominal 0.']);
+            }
             return back()->with('error', 'Belum ada tagihan yang dipilih atau nominal 0.');
         }
 
         // 2. Additional validation for Tabungan
         if ($request->metode == 'tabungan') {
             if ($siswa->saldo_tabungan < $totalBayarNeeded) {
+                if ($request->ajax() || $request->wantsJson() || $request->headers->has('X-Requested-With')) {
+                    return response()->json(['success' => false, 'error' => 'Saldo tabungan tidak mencukupi. Total Tagihan: Rp ' . number_format($totalBayarNeeded,0,',','.') . ', Saldo: Rp ' . number_format($siswa->saldo_tabungan,0,',','.')]);
+                }
                 return back()->with('error', 'Saldo tabungan tidak mencukupi. Total Tagihan: Rp ' . number_format($totalBayarNeeded,0,',','.') . ', Saldo: Rp ' . number_format($siswa->saldo_tabungan,0,',','.'));
             }
         }
@@ -368,10 +374,16 @@ class TransaksiController extends \App\Http\Controllers\Controller
         $lastTransaksiId = null;
 
         try {
-            \DB::transaction(function () use ($request, $siswa, $billsToProcess, $totalBayarNeeded, &$lastTransaksiId) {
+            \DB::transaction(function () use ($request, $id, $billsToProcess, $totalBayarNeeded, &$lastTransaksiId) {
 
-                // 3. Process Deduction if Tabungan
+                // Reload Siswa with Lock to prevent Double Spend on Tabungan
+                $siswa = \App\Models\Siswa::where('id', $id)->lockForUpdate()->firstOrFail();
+
+                // 3. Process Deduction if Tabungan (Re-validate balance inside lock)
                 if ($request->metode == 'tabungan') {
+                    if ($siswa->saldo_tabungan < $totalBayarNeeded) {
+                        throw new \Exception('Gagal: Saldo tabungan berubah/tidak cukup saat diproses.');
+                    }
                     $saldoAkhir = $siswa->saldo_tabungan - $totalBayarNeeded;
 
                     // Create History in Tabungan
@@ -519,11 +531,14 @@ class TransaksiController extends \App\Http\Controllers\Controller
             }
 
         } catch (\Exception $e) {
+            if ($request->ajax() || $request->wantsJson() || $request->headers->has('X-Requested-With')) {
+                return response()->json(['success' => false, 'error' => $e->getMessage()]);
+            }
             return back()->with('error', $e->getMessage());
         }
 
         // Handle AJAX / JSON Response for Modal
-        if ($request->ajax() || $request->wantsJson()) {
+        if ($request->ajax() || $request->wantsJson() || $request->headers->has('X-Requested-With')) {
             $response = [
                 'success' => true,
                 'message' => 'Pembayaran berhasil diproses.',

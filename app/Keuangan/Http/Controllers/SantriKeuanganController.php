@@ -87,5 +87,19 @@ class SantriKeuanganController extends \App\Http\Controllers\Controller
 
         return view('keuangan.santri.keuangan.history', compact('siswa', 'history') + ['santri' => $siswa]);
     }
+
+    public function sync($id)
+    {
+        $siswa = \App\Models\Siswa::findOrFail($id);
+
+        try {
+            // Re-sync all bills calculation including fixing subsidies
+            \App\Keuangan\Services\BillService::syncForsiswa($siswa);
+
+            return redirect()->back()->with('success', 'Data Keuangan berhasil disinkronkan & dikalkulasi ulang!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal mensinkronkan: ' . $e->getMessage());
+        }
+    }
 }
 

@@ -61,7 +61,11 @@ class MasterStudentController extends Controller
         }
 
         $students = $query->paginate(20)->withQueryString();
-        $levels = Jenjang::all();
+        $levels = Jenjang::with(['kelas' => function($q) use ($activeYear) {
+            if ($activeYear) {
+                $q->where('id_tahun_ajaran', $activeYear->id);
+            }
+        }])->get();
 
         // Statistics
         $stats = [

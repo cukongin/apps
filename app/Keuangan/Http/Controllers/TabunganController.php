@@ -84,10 +84,10 @@ class TabunganController extends \App\Http\Controllers\Controller
             'keterangan' => 'nullable|string',
         ]);
 
-        $siswa = Siswa::findOrFail($id);
-
         try {
-            DB::transaction(function () use ($request, $siswa) {
+            DB::transaction(function () use ($request, $id) {
+                // Lock row to prevent double-spend (race condition)
+                $siswa = Siswa::where('id', $id)->lockForUpdate()->firstOrFail();
                 $currentBalance = $siswa->saldo_tabungan;
 
                 if ($request->tipe == 'tarik') {

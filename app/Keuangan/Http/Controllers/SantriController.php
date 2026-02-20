@@ -61,7 +61,12 @@ class SantriController extends \App\Http\Controllers\Controller
 
         // Data for Filter and Counts
         // Use Academic 'Jenjang' to ensure data consistency
-        $levels = \App\Models\Jenjang::with('kelas')->get();
+        $activeYear = \App\Models\TahunAjaran::where('status', 'aktif')->first();
+        $levels = \App\Models\Jenjang::with(['kelas' => function($q) use ($activeYear) {
+            if ($activeYear) {
+                $q->where('id_tahun_ajaran', $activeYear->id);
+            }
+        }])->get();
         $total_siswa = Siswa::count();
         $filtered_count = $santrisPaginator->total();
 
@@ -150,16 +155,24 @@ class SantriController extends \App\Http\Controllers\Controller
     {
         $siswa = Siswa::findOrFail($id);
 
-        // Loop to ensure events/cascades (e.g. transactions) are handled
-        foreach($siswa->tagihans as $tagihan) {
-            $tagihan->transaksis()->delete();
+        // Security: Hanya ambil tagihan yang BELUM DIBAYAR sedikitpun (terbayar <= 0 dan belum lunas)
+        // Mencegah riwayat transaksi/refund tabungan terhapus begitu saja oleh Admin.
+        $tagihanKosong = $siswa->tagihans()
+            ->where('status', 'belum')
+            ->where('terbayar', '<=', 0)
+            ->get();
+
+        $count = 0;
+        foreach($tagihanKosong as $tagihan) {
+            $tagihan->transaksis()->delete(); // Subsidi virtual kalau ada
             $tagihan->delete();
+            $count++;
         }
 
         if (request()->wantsJson()) {
-            return response()->json(['success' => true, 'message' => 'Semua tagihan berhasil dihapus.']);
+            return response()->json(['success' => true, 'message' => "Berhasil mereset $count tagihan kosong (Belum Lunas). Tagihan yang sudah ada riwayat bayar dibiarkan."]);
         }
 
-        return back()->with('success', 'Semua tagihan berhasil dihapus.');
+        return back()->with('success', "Berhasil mereset $count tagihan kosong (Belum Lunas). Tagihan yang sudah ada riwayat bayar dibiarkan.");
     }
 }

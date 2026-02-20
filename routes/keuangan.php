@@ -52,6 +52,7 @@ Route::middleware(['auth'])->group(function () {
         // Auxiliary Financial Views
         Route::get('/santri/{id}/keuangan', [SantriKeuanganController::class, 'index'])->name('santri.keuangan.index');
         Route::get('/santri/{id}/keuangan/history', [SantriKeuanganController::class, 'history'])->name('santri.keuangan.history');
+        Route::post('/santri/{id}/keuangan/sync', [SantriKeuanganController::class, 'sync'])->name('santri.keuangan.sync');
 
         // Transaksi
         Route::get('/pembayaran', [TransaksiController::class, 'index'])->name('pembayaran.index');

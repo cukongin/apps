@@ -25,8 +25,11 @@ class TagihanController extends \App\Http\Controllers\Controller
 
         $tagihan = Tagihan::findOrFail($id);
 
+        if ($request->jumlah < $tagihan->terbayar) {
+            return back()->with('error', 'Gagal: Nominal tagihan tidak boleh lebih kecil dari total yang sudah dibayarkan (Rp ' . number_format($tagihan->terbayar, 0, ',', '.') . ').');
+        }
+
         $tagihan->update([
-            'jumlah' => $request->jumlah,
             'jumlah' => $request->jumlah,
             'keterangan' => $request->keterangan
         ]);
@@ -41,26 +44,44 @@ class TagihanController extends \App\Http\Controllers\Controller
     {
         $tagihan = Tagihan::findOrFail($id);
 
+        if ($tagihan->terbayar > 0) {
+            return back()->with('error', 'Tagihan tidak dapat dihapus karena sudah ada riwayat pembayaran. Silakan Hapus/Refund transaksinya terlebih dahulu di Menu Pembayaran.');
+        }
+
         $tagihan->transaksis()->delete();
         $tagihan->delete();
 
-        return back()->with('success', 'Tagihan berhasil dihapus.');
+        return back()->with('success', 'Tagihan kosong berhasil dihapus.');
     }
 
     public function waive($id)
     {
         $tagihan = Tagihan::findOrFail($id);
 
-        if ($tagihan->status == 'lunas') {
-            return back()->with('error', 'Tagihan sudah lunas.');
+        if ($tagihan->status == 'lunas' || $tagihan->terbayar >= $tagihan->jumlah) {
+            return back()->with('error', 'Tagihan sudah lunas atau terselesaikan.');
         }
 
-        $tagihan->jumlah = $tagihan->terbayar;
-        $tagihan->status = 'lunas';
-        $tagihan->keterangan = $tagihan->keterangan . ' (Sisa Diputihkan)';
-        $tagihan->save();
+        $sisaDiputihkan = $tagihan->jumlah - $tagihan->terbayar;
 
-        return back()->with('success', 'Sisa tagihan berhasil diputihkan. Status kini Lunas.');
+        \DB::transaction(function() use ($tagihan, $sisaDiputihkan) {
+            // Membuat transaksi subsidi agar tercatat di Laporan BKU / Diskon
+            \App\Keuangan\Models\Transaksi::create([
+                'tagihan_id' => $tagihan->id,
+                'jumlah_bayar' => $sisaDiputihkan,
+                'metode_pembayaran' => 'Subsidi',
+                'keterangan' => 'Pemutihan (Waive) Manual oleh Admin',
+                'created_at' => \Carbon\Carbon::now()->format('Y-m-d H:i:s')
+            ]);
+
+            $tagihan->keterangan = $tagihan->keterangan . ' (Sisa Diputihkan)';
+            $tagihan->save();
+
+            // Self-healing status
+            \App\Keuangan\Services\BillService::updateStatus($tagihan);
+        });
+
+        return back()->with('success', 'Sisa tagihan Rp ' . number_format($sisaDiputihkan, 0, ',', '.') . ' berhasil diputihkan (dicatat sbg Subsidi). Status kini Lunas.');
     }
 
     public function generateFuture(Request $request, $siswaId)
@@ -81,9 +102,10 @@ class TagihanController extends \App\Http\Controllers\Controller
     public function resetBills($siswaId)
     {
         $siswa = \App\Models\Siswa::findOrFail($siswaId);
-        // Only delete UNPAID bills to prevent financial data loss
+        // Only delete UNPAID and ZERO terbayar bills to prevent financial data and orphaned transaction loss
         $deleted = $siswa->tagihans()
-            ->where('status', '!=', 'lunas')
+            ->where('status', 'belum')
+            ->where('terbayar', '<=', 0) // Extra safety
             ->delete();
 
         return back()->with('success', "Berhasil mereset (menghapus) $deleted tagihan yang belum lunas.");
