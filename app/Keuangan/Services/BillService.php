@@ -49,10 +49,10 @@ class BillService
                     ->where('jenis_biaya_id', $biaya->id)
                     ->first();
 
-                file_put_contents('d:/XAMPP/htdocs/siapps/debug_bill_service.log', "Biaya: {$biaya->nama}, Kategori: {$siswa->kategori_keringanan_id}, Aturan: " . ($aturan ? 'YES' : 'NO') . "\n", FILE_APPEND);
+// Debug line removed
 
                 if ($aturan) {
-                    file_put_contents('d:/XAMPP/htdocs/siapps/debug_bill_service.log', "Type: {$aturan->tipe_diskon}, Jumlah: {$aturan->jumlah}\n", FILE_APPEND);
+// Debug line removed
 
                     if ($aturan->tipe_diskon == 'nominal') {
                         $discountAmount = $aturan->jumlah;
