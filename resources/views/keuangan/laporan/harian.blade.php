@@ -25,7 +25,7 @@
     </style>
 
     <div class="flex flex-col gap-6 print:block print:gap-0">
-    
+
         <!-- Print Header -->
         <div class="hidden print:block mb-4 text-center">
             <x-kop-laporan />
@@ -50,30 +50,34 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 print:hidden">
             <div class="bg-primary/10 dark:bg-primary/5 rounded-xl p-8 border border-primary/20 flex flex-col items-center justify-center text-center gap-2">
                 <p class="text-primary font-bold uppercase tracking-wider text-sm">Total Uang Masuk Hari Ini</p>
-                <h2 class="text-5xl font-black text-primary">Rp 4.250.000</h2>
+                <h2 class="text-5xl font-black text-primary">Rp {{ number_format($totalMasuk, 0, ',', '.') }}</h2>
                 <div class="flex gap-4 mt-2 text-sm font-medium text-[#617589] dark:text-[#a0c2a7]">
-                    <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">payments</span> Cash: Rp 3.000.000</span>
-                    <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">credit_card</span> Transfer: Rp 1.250.000</span>
+                    <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">payments</span> Cash: Rp {{ number_format($totalCash, 0, ',', '.') }}</span>
+                    <span class="flex items-center gap-1"><span class="material-symbols-outlined text-sm">credit_card</span> Transfer: Rp {{ number_format($totalTransfer, 0, ',', '.') }}</span>
                 </div>
             </div>
             <div class="bg-white dark:bg-[#1a2e1d] rounded-xl p-8 border border-[#dbe0e6] dark:border-[#2a452e] flex flex-col gap-4">
                 <h3 class="font-bold text-lg text-[#111812] dark:text-white">Ringkasan Transaksi</h3>
                 <div class="space-y-3">
                     <div class="flex justify-between items-center text-sm">
-                        <span class="text-[#617589] dark:text-[#a0c2a7]">Pembayaran SPP (12 Siswa)</span>
-                        <span class="font-bold text-[#111812] dark:text-white">Rp 3.000.000</span>
+                        <span class="text-[#617589] dark:text-[#a0c2a7]">Pembayaran SPP (Tunai/Transfer)</span>
+                        <span class="font-bold text-[#111812] dark:text-white">Rp {{ number_format($sortedTransaksi->where('tipe', 'SPP')->where('metode', '!=', 'Subsidi')->sum('nominal'), 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between items-center text-sm">
-                        <span class="text-[#617589] dark:text-[#a0c2a7]">Tabungan Masuk (5 Siswa)</span>
-                        <span class="font-bold text-[#111812] dark:text-white">Rp 500.000</span>
+                        <span class="text-orange-500 italic">Subsidi / Beasiswa (Non-Tunai)</span>
+                        <span class="font-bold text-orange-500 italic">Rp {{ number_format($sortedTransaksi->where('tipe', 'SPP')->where('metode', 'Subsidi')->sum('nominal'), 0, ',', '.') }}</span>
                     </div>
                     <div class="flex justify-between items-center text-sm">
-                        <span class="text-[#617589] dark:text-[#a0c2a7]">Pembayaran Seragam (2 Siswa)</span>
-                        <span class="font-bold text-[#111812] dark:text-white">Rp 750.000</span>
+                        <span class="text-[#617589] dark:text-[#a0c2a7]">Tabungan Masuk</span>
+                        <span class="font-bold text-[#111812] dark:text-white">Rp {{ number_format($sortedTransaksi->where('tipe', 'Tabungan')->sum('nominal'), 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span class="text-[#617589] dark:text-[#a0c2a7]">Pemasukan Lain</span>
+                        <span class="font-bold text-[#111812] dark:text-white">Rp {{ number_format($sortedTransaksi->where('tipe', 'Lainnya')->sum('nominal'), 0, ',', '.') }}</span>
                     </div>
                     <div class="border-t border-[#dbe0e6] dark:border-[#2a452e] pt-2 flex justify-between items-center font-bold">
-                        <span class="text-[#111812] dark:text-white">TOTAL</span>
-                        <span class="text-primary">Rp 4.250.000</span>
+                        <span class="text-[#111812] dark:text-white">TOTAL UANG MASUK (CASH)</span>
+                        <span class="text-primary">Rp {{ number_format($totalMasuk, 0, ',', '.') }}</span>
                     </div>
                 </div>
             </div>
@@ -89,44 +93,39 @@
                     <thead class="bg-slate-50 dark:bg-slate-800/50 text-xs font-bold text-[#617589] dark:text-[#a0c2a7] uppercase tracking-wider">
                         <tr>
                             <th class="px-6 py-4">Jam</th>
-                            <th class="px-6 py-4">Siswa</th>
+                            <th class="px-6 py-4">Siswa / Sumber</th>
                             <th class="px-6 py-4">Keterangan</th>
                             <th class="px-6 py-4">Metode</th>
                             <th class="px-6 py-4 text-right">Nominal</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-[#dbe0e6] dark:divide-[#2a452e] text-sm">
-                        <!-- Item 1 -->
+                        @forelse($sortedTransaksi as $item)
                         <tr class="hover:bg-[#f8f9fa] dark:hover:bg-[#233827] transition-colors">
-                            <td class="px-6 py-4 text-[#617589] dark:text-[#a0c2a7] font-mono">08:15</td>
-                            <td class="px-6 py-4 font-bold text-[#111812] dark:text-white">Ahmad Fauzi (7-A)</td>
-                            <td class="px-6 py-4">SPP Bulan Februari</td>
-                            <td class="px-6 py-4"><span class="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">Cash</span></td>
-                            <td class="px-6 py-4 text-right font-bold text-[#111812] dark:text-white">Rp 250.000</td>
+                            <td class="px-6 py-4 text-[#617589] dark:text-[#a0c2a7] font-mono">{{ $item['jam'] }}</td>
+                            <td class="px-6 py-4 font-bold text-[#111812] dark:text-white">{{ $item['siswa'] }}</td>
+                            <td class="px-6 py-4">{{ $item['keterangan'] }}</td>
+                            <td class="px-6 py-4">
+                                @if($item['metode'] == 'Cash' || $item['metode'] == 'Tunai')
+                                    <span class="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">{{ $item['metode'] }}</span>
+                                @else
+                                    <span class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold">{{ $item['metode'] }}</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 text-right font-bold text-[#111812] dark:text-white">Rp {{ number_format($item['nominal'], 0, ',', '.') }}</td>
                         </tr>
-                        <!-- Item 2 -->
-                        <tr class="hover:bg-[#f8f9fa] dark:hover:bg-[#233827] transition-colors">
-                            <td class="px-6 py-4 text-[#617589] dark:text-[#a0c2a7] font-mono">08:45</td>
-                            <td class="px-6 py-4 font-bold text-[#111812] dark:text-white">Siti Aminah (7-B)</td>
-                            <td class="px-6 py-4">Tabungan Harian</td>
-                            <td class="px-6 py-4"><span class="px-2 py-0.5 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold">Cash</span></td>
-                            <td class="px-6 py-4 text-right font-bold text-[#111812] dark:text-white">Rp 50.000</td>
+                        @empty
+                        <tr>
+                            <td colspan="5" class="px-6 py-8 text-center text-gray-500 italic">Belum ada transaksi hari ini.</td>
                         </tr>
-                        <!-- Item 3 -->
-                        <tr class="hover:bg-[#f8f9fa] dark:hover:bg-[#233827] transition-colors">
-                            <td class="px-6 py-4 text-[#617589] dark:text-[#a0c2a7] font-mono">10:30</td>
-                            <td class="px-6 py-4 font-bold text-[#111812] dark:text-white">Budi Santoso (8-A)</td>
-                            <td class="px-6 py-4">Pelunasan Seragam</td>
-                            <td class="px-6 py-4"><span class="px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-bold">Transfer</span></td>
-                            <td class="px-6 py-4 text-right font-bold text-[#111812] dark:text-white">Rp 450.000</td>
-                        </tr>
+                        @endforelse
                     </tbody>
                     <!-- Footer Total -->
                     <tbody class="divide-y divide-[#dbe6dd] dark:divide-[#2a3a2d]">
                          <tr class="border-t-2 border-[#dbe6dd] dark:border-[#2a3a2d]">
                             <td colspan="4" class="px-6 py-2 text-sm font-black text-left">Total Penerimaan</td>
                             <td class="px-6 py-2 text-sm font-black text-[#111812] dark:text-white text-right">
-                                Rp 4.250.000
+                                Rp {{ number_format($totalMasuk, 0, ',', '.') }}
                             </td>
                         </tr>
                     </tbody>
@@ -148,36 +147,21 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Item 1 -->
+                    @foreach($sortedTransaksi as $item)
                     <tr class="border-b border-black/50">
-                        <td class="py-1 px-2 text-center border-r border-black" style="white-space: nowrap;">08:15</td>
-                        <td class="py-1 px-2 font-bold border-r border-black">Ahmad Fauzi (7-A)</td>
-                        <td class="py-1 px-2 border-r border-black">SPP Bulan Februari</td>
-                        <td class="py-1 px-2 text-center border-r border-black" style="white-space: nowrap;">Cash</td>
-                        <td class="py-1 px-2 text-right font-bold" style="white-space: nowrap;">Rp 250.000</td>
+                        <td class="py-1 px-2 text-center border-r border-black" style="white-space: nowrap;">{{ $item['jam'] }}</td>
+                        <td class="py-1 px-2 font-bold border-r border-black">{{ $item['siswa'] }}</td>
+                        <td class="py-1 px-2 border-r border-black">{{ $item['keterangan'] }}</td>
+                        <td class="py-1 px-2 text-center border-r border-black" style="white-space: nowrap;">{{ $item['metode'] }}</td>
+                        <td class="py-1 px-2 text-right font-bold" style="white-space: nowrap;">Rp {{ number_format($item['nominal'], 0, ',', '.') }}</td>
                     </tr>
-                    <!-- Item 2 -->
-                    <tr class="border-b border-black/50">
-                        <td class="py-1 px-2 text-center border-r border-black" style="white-space: nowrap;">08:45</td>
-                        <td class="py-1 px-2 font-bold border-r border-black">Siti Aminah (7-B)</td>
-                        <td class="py-1 px-2 border-r border-black">Tabungan Harian</td>
-                        <td class="py-1 px-2 text-center border-r border-black" style="white-space: nowrap;">Cash</td>
-                        <td class="py-1 px-2 text-right font-bold" style="white-space: nowrap;">Rp 50.000</td>
-                    </tr>
-                    <!-- Item 3 -->
-                    <tr class="border-b border-black/50">
-                        <td class="py-1 px-2 text-center border-r border-black" style="white-space: nowrap;">10:30</td>
-                        <td class="py-1 px-2 font-bold border-r border-black">Budi Santoso (8-A)</td>
-                        <td class="py-1 px-2 border-r border-black">Pelunasan Seragam</td>
-                        <td class="py-1 px-2 text-center border-r border-black" style="white-space: nowrap;">Transfer</td>
-                        <td class="py-1 px-2 text-right font-bold" style="white-space: nowrap;">Rp 450.000</td>
-                    </tr>
-                    
+                    @endforeach
+
                     <!-- Total -->
                     <tr class="border-t-2 border-black font-bold">
                         <td colspan="4" class="py-2 px-2 text-right uppercase border-r border-black">Total Penerimaan</td>
                         <td class="py-2 px-2 text-right" style="white-space: nowrap;">
-                            Rp 4.250.000
+                            Rp {{ number_format($totalMasuk, 0, ',', '.') }}
                         </td>
                     </tr>
                 </tbody>

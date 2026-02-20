@@ -439,6 +439,48 @@
                 closePaymentModal();
             }
         });
+        // Checkbox Scripts for Bulk Action
+        function toggleSelectAll(source) {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            updateBulkActionUI();
+
+            // Sync both select all checkboxes
+            const infoCheck = document.getElementById('selectAllInfo');
+            if(infoCheck) infoCheck.checked = source.checked;
+
+            const tableCheck = document.getElementById('selectAllTable');
+            if(tableCheck) tableCheck.checked = source.checked;
+        }
+
+        function deselectAll() {
+            const checkboxes = document.querySelectorAll('.student-checkbox');
+            checkboxes.forEach(cb => cb.checked = false);
+
+            const infoCheck = document.getElementById('selectAllInfo');
+            if(infoCheck) infoCheck.checked = false;
+
+            const tableCheck = document.getElementById('selectAllTable');
+            if(tableCheck) tableCheck.checked = false;
+
+            updateBulkActionUI();
+        }
+
+        function updateBulkActionUI() {
+            const selected = document.querySelectorAll('.student-checkbox:checked').length;
+            const bar = document.getElementById('bulkActionBar');
+            const countSpan = document.getElementById('selectedCount');
+
+            if(bar && countSpan) {
+                countSpan.innerText = selected + " Santri Terpilih";
+
+                if (selected > 0) {
+                    bar.classList.remove('translate-y-24', 'opacity-0');
+                } else {
+                    bar.classList.add('translate-y-24', 'opacity-0');
+                }
+            }
+        }
     </script>
 </x-app-layout>
 

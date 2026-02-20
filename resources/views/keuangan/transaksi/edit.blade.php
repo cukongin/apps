@@ -3,7 +3,7 @@
         <!-- Header -->
         <header class="flex items-center justify-between px-6 py-4 bg-white dark:bg-[#1e3a24] border-b border-[#f0f4f1] dark:border-[#2a3a2d]">
             <div class="flex items-center gap-4">
-                <a href="{{ route('pembayaran.create', $transaksi->tagihan->santri_id) }}" class="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#2a3a2d] transition-colors">
+                <a href="{{ route('keuangan.pembayaran.create', $transaksi->tagihan->santri_id) }}" class="p-2 -ml-2 rounded-full hover:bg-gray-100 dark:hover:bg-[#2a3a2d] transition-colors">
                     <span class="material-symbols-outlined text-[#111812] dark:text-white">arrow_back</span>
                 </a>
                 <div>
@@ -16,7 +16,7 @@
         <!-- Main Content -->
         <div class="flex-1 overflow-y-auto p-6 md:p-8">
             <div class="max-w-2xl mx-auto">
-                <form action="{{ route('pembayaran.update', $transaksi->id) }}" method="POST" class="bg-white dark:bg-[#1e3a24] rounded-2xl shadow-sm border border-[#f0f4f1] dark:border-[#2a3a2d] p-6 space-y-6">
+                <form action="{{ route('keuangan.pembayaran.update', $transaksi->id) }}" method="POST" class="bg-white dark:bg-[#1e3a24] rounded-2xl shadow-sm border border-[#f0f4f1] dark:border-[#2a3a2d] p-6 space-y-6">
                     @csrf
                     @method('PUT')
 
@@ -60,7 +60,7 @@
                     <!-- Actions -->
                     <div class="pt-4 flex flex-col gap-3">
                         <div class="flex gap-3">
-                            <a href="{{ route('pembayaran.create', $transaksi->tagihan->santri_id) }}" class="flex-1 py-3 text-center rounded-xl font-bold text-[#618968] hover:bg-gray-50 dark:hover:bg-[#2a3a2d] transition-colors border border-transparent hover:border-[#dbe6dd] dark:hover:border-[#2a3a2d]">
+                            <a href="{{ route('keuangan.pembayaran.create', $transaksi->tagihan->santri_id) }}" class="flex-1 py-3 text-center rounded-xl font-bold text-[#618968] hover:bg-gray-50 dark:hover:bg-[#2a3a2d] transition-colors border border-transparent hover:border-[#dbe6dd] dark:hover:border-[#2a3a2d]">
                                 Batal
                             </a>
                             <button type="submit" class="flex-1 py-3 bg-primary text-white rounded-xl font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
@@ -70,7 +70,7 @@
                 </form>
 
                         <!-- Delete Button (Separate Form) -->
-                        <form action="{{ route('pembayaran.destroy', $transaksi->id) }}" method="POST"
+                        <form action="{{ route('keuangan.pembayaran.destroy', $transaksi->id) }}" method="POST"
                               data-confirm-delete="true"
                               data-title="Hapus Pembayaran?"
                               data-message="Saldo tagihan akan dikembalikan ke status sebelumnya."

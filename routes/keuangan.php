@@ -45,6 +45,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/santri', [SantriController::class, 'index'])->name('santri.index');
         Route::get('/santri/export', [SantriController::class, 'export'])->name('santri.export');
         Route::get('/santri/{id}', [SantriController::class, 'show'])->name('santri.show');
+        // Route for Reset Bills
+        Route::delete('santri/{id}/destroy-all-bills', [SantriController::class, 'destroyAllBills'])->name('santri.destroy-all-bills');
         Route::get('/santri/{id}/generate-bills', [SantriController::class, 'generateBills'])->name('santri.generate-bills');
 
         // Auxiliary Financial Views
@@ -58,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/transaksi/{id}/edit', [TransaksiController::class, 'edit'])->name('pembayaran.edit');
         Route::put('/transaksi/{id}', [TransaksiController::class, 'update'])->name('pembayaran.update');
         Route::delete('/transaksi/{id}', [TransaksiController::class, 'destroy'])->name('pembayaran.destroy');
+        Route::post('/transaksi/bulk-reset', [TransaksiController::class, 'bulkReset'])->name('pembayaran.bulk-reset');
 
         Route::get('/spp', [SppController::class, 'index'])->name('spp.index');
         Route::get('/spp/receipt', [SppController::class, 'receipt'])->name('spp.receipt');
@@ -70,6 +73,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/pengeluaran', [PengeluaranController::class, 'store'])->name('pengeluaran.store');
         Route::delete('/pengeluaran/{id}', [PengeluaranController::class, 'destroy'])->name('pengeluaran.destroy');
 
+        Route::delete('/pemasukan/destroy-all', [\App\Keuangan\Http\Controllers\PemasukanController::class, 'destroyAll'])->name('pemasukan.destroy-all');
         Route::get('/pemasukan', [PemasukanController::class, 'index'])->name('pemasukan.index');
         Route::post('/pemasukan', [PemasukanController::class, 'store'])->name('pemasukan.store');
         Route::delete('/pemasukan/{id}', [PemasukanController::class, 'destroy'])->name('pemasukan.destroy');
@@ -111,6 +115,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/laporan/tunggakan', [LaporanController::class, 'tunggakan'])->name('laporan.tunggakan');
         Route::get('/laporan/harian', [LaporanHarianController::class, 'index'])->name('laporan.harian');
         Route::get('/laporan/tahunan', [LaporanController::class, 'tahunan'])->name('laporan.tahunan');
+    Route::get('/laporan/subsidi', [LaporanController::class, 'subsidi'])->name('laporan.subsidi');
     });
 
     // --- SAVINGS ---

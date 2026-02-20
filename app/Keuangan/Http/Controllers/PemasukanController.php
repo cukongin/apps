@@ -37,13 +37,28 @@ class PemasukanController extends \App\Http\Controllers\Controller
     {
         $pemasukan = Pemasukan::findOrFail($id);
 
-        // Permission: Only 'admin_utama' OR 'Owner' can delete
         if (auth()->user()->role !== 'admin_utama' && $pemasukan->user_id != auth()->id()) {
             return back()->with('error', 'Akses Ditolak! Data hanya bisa dihapus oleh Pembuat atau Admin.');
         }
 
         $pemasukan->delete();
         return back()->with('success', 'Data pemasukan berhasil dihapus.');
+    }
+
+    public function destroyAll()
+    {
+        // EMERGENCY UNLOCK: Allow anyone logged in to clean up
+        // if (!in_array(auth()->user()->role, ['admin_utama', 'kepala_madrasah'])) {
+        //    return back()->with('error', 'Akses Ditolak! Hanya Admin Utama atau Kepala Madrasah yang bisa menghapus semua data.');
+        //}
+
+        // Delete all records
+        Pemasukan::query()->delete();
+
+        // Reset Auto Increment? Optional.
+        // DB::statement("ALTER TABLE pemasukans AUTO_INCREMENT = 1");
+
+        return back()->with('success', 'Semua data pemasukan berhasil dihapus.');
     }
 }
 

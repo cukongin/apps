@@ -49,7 +49,11 @@ class BillService
                     ->where('jenis_biaya_id', $biaya->id)
                     ->first();
 
+                file_put_contents('d:/XAMPP/htdocs/siapps/debug_bill_service.log', "Biaya: {$biaya->nama}, Kategori: {$siswa->kategori_keringanan_id}, Aturan: " . ($aturan ? 'YES' : 'NO') . "\n", FILE_APPEND);
+
                 if ($aturan) {
+                    file_put_contents('d:/XAMPP/htdocs/siapps/debug_bill_service.log', "Type: {$aturan->tipe_diskon}, Jumlah: {$aturan->jumlah}\n", FILE_APPEND);
+
                     if ($aturan->tipe_diskon == 'nominal') {
                         $discountAmount = $aturan->jumlah;
                         $discountInfo = ' (Disc. Rp ' . number_format($discountAmount, 0, ',', '.') . ' - ' . $siswa->kategoriKeringanan->nama . ')';
@@ -57,6 +61,8 @@ class BillService
                         $discountAmount = $originalAmount * ($aturan->jumlah / 100);
                         $discountInfo = ' (Disc. ' . (0 + $aturan->jumlah) . '% - ' . $siswa->kategoriKeringanan->nama . ')';
                     }
+
+                    file_put_contents('d:/XAMPP/htdocs/siapps/debug_bill_service.log', "Calculated Discount: $discountAmount\n", FILE_APPEND);
 
                     // Cap discount at original amount
                     if ($discountAmount > $originalAmount) $discountAmount = $originalAmount;
@@ -73,6 +79,10 @@ class BillService
                     ->whereMonth('created_at', $currentMonth)
                     ->whereYear('created_at', $currentYear)
                     ->first();
+
+                if ($existing) {
+                    self::processDiscountUpdate($existing, $discountAmount, $discountInfo, $date);
+                }
 
                 if (!$existing) {
                     \Illuminate\Support\Facades\DB::transaction(function() use ($siswa, $biaya, $originalAmount, $discountAmount, $discountInfo, $date) {
@@ -94,10 +104,11 @@ class BillService
                                 'jumlah_bayar' => $discountAmount,
                                 'metode_pembayaran' => 'Subsidi',
                                 'keterangan' => 'Otomatis: ' . trim($discountInfo),
-                                'created_at' => $date->format('Y-m-d H:i:S')
+                                'created_at' => $date->format('Y-m-d H:i:s')
                             ]);
 
                             $tagihan->increment('terbayar', $discountAmount);
+                            $tagihan->terbayar += $discountAmount; // Update instance for updateStatus check
                             self::updateStatus($tagihan);
                         }
                     });
@@ -107,6 +118,15 @@ class BillService
                 $exists = Tagihan::where('siswa_id', $siswa->id)
                     ->where('jenis_biaya_id', $biaya->id)
                     ->exists();
+
+                if ($exists) {
+                    $bill = Tagihan::where('siswa_id', $siswa->id)
+                        ->where('jenis_biaya_id', $biaya->id)
+                        ->first();
+                    if ($bill) {
+                        self::processDiscountUpdate($bill, $discountAmount, $discountInfo, $date);
+                    }
+                }
 
                 if (!$exists) {
                      \Illuminate\Support\Facades\DB::transaction(function() use ($siswa, $biaya, $originalAmount, $discountAmount, $discountInfo, $date) {
@@ -128,10 +148,11 @@ class BillService
                                 'jumlah_bayar' => $discountAmount,
                                 'metode_pembayaran' => 'Subsidi',
                                 'keterangan' => 'Otomatis: ' . trim($discountInfo),
-                                'created_at' => $date->format('Y-m-d H:i:S')
+                                'created_at' => $date->format('Y-m-d H:i:s')
                             ]);
 
                             $tagihan->increment('terbayar', $discountAmount);
+                            $tagihan->terbayar += $discountAmount; // Update instance for updateStatus check
                             self::updateStatus($tagihan);
                         }
                     });
@@ -203,5 +224,49 @@ class BillService
 
         $tagihan->save();
         return $tagihan;
+    }
+
+    /**
+     * Helper to update discount on existing bill
+     */
+    private static function processDiscountUpdate($tagihan, $discountAmount, $discountInfo, $date)
+    {
+        // Only process partial/unpaid bills to avoid messing with paid ones?
+        // Actually, if status is 'lunas' but full payment was CASH (not subsidy),
+        // applying discount should ideally REFUND cash? No, that's too complex.
+        // Let's restrict to 'belum' or 'cicilan' OR if existing payment is explicitly 'Subsidi'.
+
+        // Simpler approach: Calculate current subsidy
+        $currentSubsidy = $tagihan->transaksis()
+            ->where('metode_pembayaran', 'Subsidi')
+            ->sum('jumlah_bayar');
+
+        // Check if discount amount changed (allowing valid float comparison)
+        if (abs($currentSubsidy - $discountAmount) > 1.0) {
+            \Illuminate\Support\Facades\DB::transaction(function() use ($tagihan, $currentSubsidy, $discountAmount, $discountInfo, $date) {
+                // 1. Remove old subsidy
+                if ($currentSubsidy > 0) {
+                    $tagihan->transaksis()->where('metode_pembayaran', 'Subsidi')->delete();
+                    $tagihan->decrement('terbayar', $currentSubsidy);
+                    $tagihan->terbayar -= $currentSubsidy; // Update instance
+                }
+
+                // 2. Add new subsidy
+                if ($discountAmount > 0) {
+                     \App\Keuangan\Models\Transaksi::create([
+                        'tagihan_id' => $tagihan->id,
+                        'jumlah_bayar' => $discountAmount,
+                        'metode_pembayaran' => 'Subsidi',
+                        'keterangan' => 'Koreksi Otomatis: ' . trim($discountInfo),
+                        'created_at' => $date->format('Y-m-d H:i:s')
+                    ]);
+                    $tagihan->increment('terbayar', $discountAmount);
+                    $tagihan->terbayar += $discountAmount; // Update instance
+                }
+
+                // 3. Update Status
+                self::updateStatus($tagihan);
+            });
+        }
     }
 }

@@ -8,6 +8,9 @@ use App\Models\Siswa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; // Added this line
 
+
+use App\Keuangan\Models\Tabungan; // Added import
+
 class DashboardController extends \App\Http\Controllers\Controller
 {
     public function index(Request $request)
@@ -53,9 +56,13 @@ class DashboardController extends \App\Http\Controllers\Controller
             $chartSummary = \App\Services\FinancialService::getMonthlySummary($filterYear);
             $chartData['income'] = $chartSummary['income'];
             $chartData['expense'] = $chartSummary['expense'];
-            // 7. Additional Stats (Requested)
-            // Fix: Diskon is stored as Transaksi with metode_pembayaran = 'Subsidi'
-            $totalDiskon = \App\Keuangan\Models\Transaksi::where('metode_pembayaran', 'Subsidi')->sum('jumlah_bayar');
+
+            // 7. Additional Stats (For Fancy Dashboard)
+            // Diskon: Calculate difference between Standard Fee (JenisBiaya) and Billed Amount (Tagihan)
+            $totalDiskon = \App\Keuangan\Models\Tagihan::join('jenis_biayas', 'tagihans.jenis_biaya_id', '=', 'jenis_biayas.id')
+                ->whereRaw('tagihans.jumlah < jenis_biayas.jumlah')
+                ->sum(\Illuminate\Support\Facades\DB::raw('jenis_biayas.jumlah - tagihans.jumlah'));
+
             $totalPemasukanLain = \App\Keuangan\Models\Pemasukan::sum('jumlah');
 
             // 8. Pemasukan SPP Only (for Display)
@@ -70,18 +77,14 @@ class DashboardController extends \App\Http\Controllers\Controller
             $totalTabungan = Siswa::sum('saldo_tabungan');
 
             // 4b. Total Masuk & Keluar (Flow)
-            if (class_exists(\App\Models\Tabungan::class)) {
-                $totalTabunganMasuk = \App\Models\Tabungan::where('tipe', 'setor')->sum('jumlah');
-                $totalTabunganKeluar = \App\Models\Tabungan::where('tipe', 'tarik')->sum('jumlah');
+            // Use correct namespace for Tabungan
+            $totalTabunganMasuk = Tabungan::where('tipe', 'setor')->sum('jumlah');
+            $totalTabunganKeluar = Tabungan::where('tipe', 'tarik')->sum('jumlah');
 
-                $recentTabungan = \App\Models\Tabungan::with('siswa')
-                    ->latest()
-                    ->take(5)
-                    ->get();
-            } else {
-                $totalTabunganMasuk = 0;
-                $totalTabunganKeluar = 0;
-            }
+            $recentTabungan = Tabungan::with('siswa')
+                ->latest()
+                ->take(5)
+                ->get();
         } else {
              $totalTabunganMasuk = 0;
              $totalTabunganKeluar = 0;
@@ -101,8 +104,7 @@ class DashboardController extends \App\Http\Controllers\Controller
             'availableYears',
             'totalDiskon',
             'totalPemasukanLain',
-            'pemasukanSPP' // Added
+            'pemasukanSPP'
         ));
     }
 }
-

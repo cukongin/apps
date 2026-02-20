@@ -57,7 +57,7 @@ class SantriKeuanganController extends \App\Http\Controllers\Controller
         $siswa = \App\Models\Siswa::with(['tabungans', 'transaksis.tagihan.jenisBiaya'])->findOrFail($id);
 
         // Map Transactions
-        $transaksi_mapped = $siswa->transaksis->map(function ($item) {
+        $transaksi_mapped = $siswa->transaksis->toBase()->map(function ($item) {
             return [
                 'type' => 'pembayaran',
                 'date' => $item->created_at,
@@ -70,7 +70,7 @@ class SantriKeuanganController extends \App\Http\Controllers\Controller
         });
 
         // Map Savings
-        $tabungan_mapped = $siswa->tabungans->map(function ($item) {
+        $tabungan_mapped = $siswa->tabungans->toBase()->map(function ($item) {
             return [
                 'type' => 'tabungan',
                 'date' => $item->created_at,
@@ -85,7 +85,7 @@ class SantriKeuanganController extends \App\Http\Controllers\Controller
         // Merge and Sort
         $history = $transaksi_mapped->merge($tabungan_mapped)->sortByDesc('date');
 
-        return view('keuangan.santri.keuangan.history', compact('siswa', 'history'));
+        return view('keuangan.santri.keuangan.history', compact('siswa', 'history') + ['santri' => $siswa]);
     }
 }
 

@@ -27,7 +27,7 @@
 
 @php
     $isPreview = !isset($transaksiCollection) && !isset($transaksi); // Fallback for direct view check
-    
+
     if ($isPreview) {
         $receiptNo = '#KWT-2023100501';
         $date = \Carbon\Carbon::create(2023, 10, 5, 9, 45);
@@ -50,16 +50,16 @@
     } else {
         // Handle Collection
         $data = $transaksiCollection->first(); // Get first item for Header Info
-        
+
         // Generate Receipt No based on the FIRST transaction ID in this batch
         // Format: #KWT-Ymd-ID
         $receiptNo = '#KWT-' . $data->created_at->format('Ymd') . '-' . str_pad($data->id, 4, '0', STR_PAD_LEFT);
-        
+
         $date = $data->created_at;
         $payerName = $data->tagihan->santri->nama;
         $payerId = $data->tagihan->santri->nis ? $data->tagihan->santri->nis : '-';
         $payerClass = $data->tagihan->santri->kelas->nama ?? 'Belum Ada Kelas';
-        
+
         $totalAmount = 0;
         $items = [];
 
@@ -74,27 +74,27 @@
 
         // WhatsApp Logic
         $noHp = $data->tagihan->santri->no_hp ?? '';
-        
+
         // Normalize Phone Number (08 -> 62)
         if (substr($noHp, 0, 1) == '0') {
             $noHp = '62' . substr($noHp, 1);
         }
-        
+
         $message = "Assalamualaikum, berikut adalah kuitansi pembayaran untuk *$payerName* ($payerId).\n\n";
         $message .= "No. Kuitansi: *$receiptNo*\n";
         $message .= "Tanggal: " . $date->translatedFormat('d F Y H:i') . "\n";
         $message .= "Total: *Rp " . number_format($totalAmount, 0, ',', '.') . "*\n\n";
-        
+
         // Generate Public Link
         // Ensure this works for both Local and Production
-        $link = route('transaksi.receipt', $data->id);
-        
+        $link = route('keuangan.transaksi.receipt', $data->id);
+
         $message .= "Link Download PDF:\n$link\n\n";
         $message .= "Terima kasih.";
-        
+
         $waUrl = "https://wa.me/$noHp?text=" . urlencode($message);
     }
-    
+
     // Preview Dummy WA
     if ($isPreview) {
         $waUrl = "#";

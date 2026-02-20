@@ -65,7 +65,7 @@
                         </button>
                     </div>
 
-                    @include('transaksi.partials.form')
+                    @include('keuangan.transaksi.partials.form')
         </section>
 
         <!-- Right Side History (Visible on Desktop) -->
@@ -76,46 +76,74 @@
             </div>
             <div class="space-y-4">
                 @forelse($recentTransactions as $history)
-                <div class="bg-white dark:bg-[#1e3a24] p-4 rounded-xl border border-[#f0f4f1] dark:border-[#2a3a2d] relative group">
-                    <div class="flex justify-between items-start mb-2">
-                        @if($history->tagihan->status == 'lunas')
-                            <span class="text-[10px] font-bold text-white bg-primary px-2 py-0.5 rounded uppercase">Lunas</span>
+                <div class="bg-white dark:bg-[#1e3a24] p-4 rounded-2xl border border-slate-100 dark:border-[#2a3a2d] shadow-sm hover:shadow-md transition-all group relative overflow-hidden">
+
+                    <!-- Decorative Background for Method -->
+                    <div class="absolute top-0 right-0 p-16 opacity-[0.03] pointer-events-none">
+                        @if($history->metode_pembayaran == 'tunai')
+                            <span class="material-symbols-outlined text-9xl">payments</span>
                         @else
-                            <span class="text-[10px] font-bold text-white bg-orange-500 px-2 py-0.5 rounded uppercase">Cicilan</span>
+                            <span class="material-symbols-outlined text-9xl">savings</span>
                         @endif
-                        <span class="text-[10px] font-medium text-[#618968] dark:text-[#a0c2a7]">{{ $history->created_at->format('d M Y') }}</span>
                     </div>
-                    <p class="text-xs font-bold mb-1 text-[#111812] dark:text-white">{{ $history->tagihan->jenisBiaya->nama }}</p>
-                    <div class="flex justify-between items-center">
-                        <p class="text-sm font-black text-primary">Rp {{ number_format($history->jumlah_bayar, 0, ',', '.') }}</p>
-                        <span class="text-[10px] font-medium text-[#618968] flex items-center gap-1">
-                            @if($history->metode_pembayaran == 'tunai')
-                                <span class="material-symbols-outlined text-[12px]">payments</span> Tunai
-                            @else
-                                <span class="material-symbols-outlined text-[12px]">savings</span> Tabungan
+
+                    <div class="flex justify-between items-start mb-3 relative z-10">
+                        <div class="flex flex-col">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-0.5">{{ $history->created_at->format('d M Y, H:i') }}</span>
+                            <span class="font-bold text-[#111812] dark:text-white leading-tight line-clamp-2">{{ $history->tagihan->jenisBiaya->nama }}</span>
+                            @if($history->tagihan->jenisBiaya->tipe == 'bulanan')
+                                <span class="text-[10px] text-slate-500 font-medium">{{ $history->tagihan->created_at->locale('id')->isoFormat('MMMM Y') }}</span>
                             @endif
-                        </span>
+                        </div>
+                        @if($history->tagihan->status == 'lunas')
+                            <div class="flex items-center justify-center size-6 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400" title="Lunas">
+                                <span class="material-symbols-outlined text-sm">check</span>
+                            </div>
+                        @else
+                             <div class="flex items-center justify-center size-6 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400" title="Cicilan">
+                                <span class="material-symbols-outlined text-sm">timelapse</span>
+                            </div>
+                        @endif
                     </div>
-                    <!-- Actions -->
-                    <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <a href="{{ route('transaksi.print-thermal', $history->id) }}" class="p-1.5 bg-gray-100 dark:bg-[#2a3a2d] rounded-lg text-gray-500 hover:text-primary transition-colors" title="Cetak Struk Thermal" onclick="window.open(this.href, 'PrintThermal', 'width=400,height=600'); return false;">
-                            <span class="material-symbols-outlined text-sm">receipt_long</span>
+
+                    <div class="flex justify-between items-end relative z-10">
+                        <div>
+                             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nominal Bayar</p>
+                             <p class="text-lg font-black text-primary">Rp {{ number_format($history->jumlah_bayar, 0, ',', '.') }}</p>
+                        </div>
+
+                        <div class="flex items-center gap-1 bg-slate-50 dark:bg-[#1a2e1d] px-2 py-1 rounded-lg border border-slate-100 dark:border-[#2a3a2d]">
+                            @if($history->metode_pembayaran == 'tunai')
+                                <span class="material-symbols-outlined text-[14px] text-slate-500">payments</span>
+                                <span class="text-[10px] font-bold text-slate-600 dark:text-slate-300">Tunai</span>
+                            @else
+                                <span class="material-symbols-outlined text-[14px] text-green-500">savings</span>
+                                <span class="text-[10px] font-bold text-slate-600 dark:text-slate-300">Tabungan</span>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- Actions Overlay (Boss Style) -->
+                    <div class="absolute inset-0 bg-white/90 dark:bg-[#1e3a24]/90 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 backdrop-blur-[2px]">
+                        <a href="{{ route('keuangan.transaksi.print-thermal', $history->id) }}" class="size-10 flex items-center justify-center bg-white dark:bg-[#2a3a2d] border border-slate-200 dark:border-[#3f5242] rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary hover:border-primary transition-all shadow-sm" title="Cetak Struk" onclick="window.open(this.href, 'PrintThermal', 'width=400,height=600'); return false;">
+                            <span class="material-symbols-outlined">receipt_long</span>
                         </a>
-                        <a href="{{ route('transaksi.receipt', $history->id) }}" class="p-1.5 bg-gray-100 dark:bg-[#2a3a2d] rounded-lg text-gray-500 hover:text-primary transition-colors" title="Cetak Kuitansi A4" target="_blank">
-                            <span class="material-symbols-outlined text-sm">print</span>
+                        <a href="{{ route('keuangan.transaksi.receipt', $history->id) }}" class="size-10 flex items-center justify-center bg-white dark:bg-[#2a3a2d] border border-slate-200 dark:border-[#3f5242] rounded-xl text-slate-600 dark:text-slate-300 hover:text-primary hover:border-primary transition-all shadow-sm" title="Cetak Kuitansi" target="_blank">
+                            <span class="material-symbols-outlined">print</span>
                         </a>
-                        <a href="{{ route('pembayaran.edit', $history->id) }}" class="p-1.5 bg-gray-100 dark:bg-[#2a3a2d] rounded-lg text-gray-500 hover:text-primary transition-colors" title="Edit Pembayaran">
-                            <span class="material-symbols-outlined text-sm">edit</span>
+                        <a href="{{ route('keuangan.pembayaran.edit', $history->id) }}" class="size-10 flex items-center justify-center bg-white dark:bg-[#2a3a2d] border border-slate-200 dark:border-[#3f5242] rounded-xl text-slate-600 dark:text-slate-300 hover:text-orange-500 hover:border-orange-500 transition-all shadow-sm" title="Edit Pembayaran">
+                            <span class="material-symbols-outlined">edit</span>
                         </a>
                     </div>
                 </div>
                 @empty
-                <div class="p-6 text-center text-gray-500 dark:text-gray-400 text-xs">
-                    Belum ada riwayat pembayaran.
+                <div class="flex flex-col items-center justify-center p-8 text-center border-2 border-dashed border-slate-200 dark:border-[#2a3a2d] rounded-2xl">
+                    <span class="material-symbols-outlined text-4xl text-slate-300 mb-2">history</span>
+                    <p class="text-sm font-bold text-slate-500 dark:text-slate-400">Belum ada riwayat.</p>
                 </div>
                 @endforelse
             </div>
-            <button class="mt-8 w-full py-3 border border-dashed border-[#dbe6dd] dark:border-[#2a3a2d] rounded-xl text-xs font-bold text-[#618968] hover:bg-white dark:hover:bg-[#1e3a24] transition-all">
+            <button onclick="window.location.href='{{ route('keuangan.santri.keuangan.history', $santri->id) }}'" class="mt-8 w-full py-3 border border-dashed border-[#dbe6dd] dark:border-[#2a3a2d] rounded-xl text-xs font-bold text-[#618968] hover:bg-white dark:hover:bg-[#1e3a24] hover:text-primary hover:border-primary transition-all">
                 LIHAT SEMUA RIWAYAT
             </button>
         </aside>

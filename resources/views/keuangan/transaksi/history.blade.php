@@ -58,7 +58,7 @@
                             // Group transactions by simple unique key (Time + Santri)
                             // We use the collection from the paginator
                             $groups = $transaksis->groupBy(function($item) {
-                                return $item->created_at->format('YmdHi') . '-' . $item->tagihan->santri_id;
+                                return $item->created_at->format('YmdHi') . '-' . $item->tagihan->siswa_id;
                             });
                         @endphp
 
@@ -81,8 +81,8 @@
                                 @if($index === 0)
                                 <td rowspan="{{ $group->count() }}" class="px-6 py-4 align-middle border-r border-[#f0f4f1] dark:border-[#2a3a2d]">
                                     <div class="flex flex-col">
-                                        <span class="text-sm font-bold text-[#111812] dark:text-white">{{ $t->tagihan->santri->nama ?? 'Hamba Allah' }}</span>
-                                        <span class="text-xs text-[#618968] dark:text-[#a0c2a7]">{{ $t->tagihan->santri->kelas->nama ?? '-' }}</span>
+                                        <span class="text-sm font-bold text-[#111812] dark:text-white">{{ $t->tagihan->siswa->nama ?? 'Hamba Allah' }}</span>
+                                        <span class="text-xs text-[#618968] dark:text-[#a0c2a7]">{{ $t->tagihan->siswa->kelas->nama ?? '-' }}</span>
                                     </div>
                                 </td>
                                 @endif
@@ -109,9 +109,13 @@
                                         <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-purple-50 text-purple-700 border border-purple-100 dark:bg-purple-900/20 dark:border-purple-800 dark:text-purple-300">
                                             <span class="material-symbols-outlined text-[12px]">savings</span> Tabungan
                                         </span>
+                                    @elseif($t->metode_pembayaran == 'Subsidi')
+                                        <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-orange-50 text-orange-700 border border-orange-100 dark:bg-orange-900/20 dark:border-orange-800 dark:text-orange-300" title="Diskon / Subsidi Otomatis">
+                                            <span class="material-symbols-outlined text-[12px]">percent</span> Diskon
+                                        </span>
                                     @else
                                         <span class="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-bold uppercase bg-green-50 text-green-700 border border-green-100 dark:bg-green-900/20 dark:border-green-800 dark:text-green-300">
-                                            <span class="material-symbols-outlined text-[12px]">payments</span> Tunai
+                                            <span class="material-symbols-outlined text-[12px]">payments</span> {{ $t->metode_pembayaran ?? 'Tunai' }}
                                         </span>
                                     @endif
                                 </td>
@@ -121,10 +125,10 @@
                                 @if($index === 0)
                                 <td rowspan="{{ $group->count() }}" class="px-6 py-4 text-center align-middle">
                                     <div class="flex items-center justify-center gap-2">
-                                        <button onclick="window.open('{{ route('transaksi.print-thermal', $t->id) }}', 'PrintThermal', 'width=400,height=600')" class="size-8 rounded-lg bg-gray-100 dark:bg-[#324b36] hover:bg-primary/20 hover:text-primary flex items-center justify-center text-gray-500 transition-all" title="Cetak Struk Thermal (Batch)">
+                                        <button onclick="window.open('{{ route('keuangan.transaksi.print-thermal', $t->id) }}', 'PrintThermal', 'width=400,height=600')" class="size-8 rounded-lg bg-gray-100 dark:bg-[#324b36] hover:bg-primary/20 hover:text-primary flex items-center justify-center text-gray-500 transition-all" title="Cetak Struk Thermal (Batch)">
                                             <span class="material-symbols-outlined text-lg">receipt_long</span>
                                         </button>
-                                        <a href="{{ route('transaksi.receipt', $t->id) }}" target="_blank" class="size-8 rounded-lg bg-gray-100 dark:bg-[#324b36] hover:bg-primary/20 hover:text-primary flex items-center justify-center text-gray-500 transition-all" title="Cetak Kuitansi A4">
+                                        <a href="{{ route('keuangan.transaksi.receipt', $t->id) }}" target="_blank" class="size-8 rounded-lg bg-gray-100 dark:bg-[#324b36] hover:bg-primary/20 hover:text-primary flex items-center justify-center text-gray-500 transition-all" title="Cetak Kuitansi A4">
                                             <span class="material-symbols-outlined text-lg">print</span>
                                         </a>
                                     </div>
@@ -133,7 +137,7 @@
 
                                 <!-- 7. Aksi Delete (Individual - per item cancellation) -->
                                 <td class="px-6 py-4 text-center align-middle">
-                                    <form action="{{ route('pembayaran.destroy', $t->id) }}" method="POST"
+                                    <form action="{{ route('keuangan.pembayaran.destroy', $t->id) }}" method="POST"
                                           data-confirm-delete="true"
                                           data-title="Batalkan Transaksi?"
                                           data-message="Apakah Anda yakin ingin membatalkan transaksi ini? Saldo/status tagihan akan dikembalikan."

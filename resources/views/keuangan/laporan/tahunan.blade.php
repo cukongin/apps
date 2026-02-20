@@ -80,8 +80,8 @@
                         <p class="text-sm font-medium text-[#618968] dark:text-gray-400">Saldo Awal Tahun</p>
                     </div>
                     <div>
-                        <p class="text-2xl font-bold text-[#111812] dark:text-white tracking-tight">Rp 150.000.000</p>
-                        <p class="text-xs text-[#618968] mt-1">Carry over 2023</p>
+                        <p class="text-2xl font-bold text-[#111812] dark:text-white tracking-tight">Rp {{ number_format($saldoAwal, 0, ',', '.') }}</p>
+                        <p class="text-xs text-[#618968] mt-1">Carry over {{ $year - 1 }}</p>
                     </div>
                 </div>
                 <!-- Card 2 -->
@@ -96,10 +96,10 @@
                         <p class="text-sm font-medium text-[#618968] dark:text-gray-400">Total Pemasukan</p>
                     </div>
                     <div>
-                        <p class="text-2xl font-bold text-[#111812] dark:text-white tracking-tight">Rp 850.000.000</p>
+                        <p class="text-2xl font-bold text-[#111812] dark:text-white tracking-tight">Rp {{ number_format($totalPemasukanTahun, 0, ',', '.') }}</p>
                         <div class="flex items-center gap-1 mt-1 text-primary text-xs font-semibold">
                             <span class="material-symbols-outlined text-sm">arrow_upward</span>
-                            <span>12% dari target</span>
+                            <span>Total tahun {{ $year }}</span>
                         </div>
                     </div>
                 </div>
@@ -115,11 +115,27 @@
                         <p class="text-sm font-medium text-[#618968] dark:text-gray-400">Total Pengeluaran</p>
                     </div>
                     <div>
-                        <p class="text-2xl font-bold text-[#111812] dark:text-white tracking-tight">Rp 600.000.000</p>
+                        <p class="text-2xl font-bold text-[#111812] dark:text-white tracking-tight">Rp {{ number_format($totalPengeluaranTahun, 0, ',', '.') }}</p>
                         <div class="flex items-center gap-1 mt-1 text-orange-500 text-xs font-semibold">
                             <span class="material-symbols-outlined text-sm">arrow_upward</span>
-                            <span>5% vs tahun lalu</span>
+                            <span>Total tahun {{ $year }}</span>
                         </div>
+                    </div>
+                </div>
+                 <!-- Card 4 (Saldo Akhir) -->
+                 <div class="bg-white dark:bg-[#1a2e1d] p-6 rounded-xl border border-gray-100 dark:border-[#2f4532] shadow-sm flex flex-col gap-4 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <span class="material-symbols-outlined text-6xl text-purple-500">savings</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg text-purple-500">
+                            <span class="material-symbols-outlined">savings</span>
+                        </div>
+                        <p class="text-sm font-medium text-[#618968] dark:text-gray-400">Saldo Akhir</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl font-bold text-[#111812] dark:text-white tracking-tight">Rp {{ number_format($saldoAkhir, 0, ',', '.') }}</p>
+                        <p class="text-xs text-[#618968] mt-1">Per hari ini</p>
                     </div>
                 </div>
             </div>
@@ -128,10 +144,6 @@
             <div class="bg-white dark:bg-[#1a2e1d] rounded-xl border border-gray-200 dark:border-[#2f4532] shadow-sm overflow-hidden flex flex-col">
                 <div class="p-6 border-b border-gray-200 dark:border-[#2f4532] flex items-center justify-between">
                     <h3 class="text-lg font-bold text-[#111812] dark:text-white">Rincian Transaksi Bulanan</h3>
-                    <button class="text-primary hover:text-[#0ea626] text-sm font-semibold flex items-center gap-1">
-                        Export Excel
-                        <span class="material-symbols-outlined text-sm">download</span>
-                    </button>
                 </div>
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left text-sm whitespace-nowrap">
@@ -140,24 +152,24 @@
                                 <th class="px-6 py-4 font-bold text-[#111812] dark:text-white sticky left-0 bg-gray-50 dark:bg-[#132015]">Bulan</th>
                                 <th class="px-6 py-4 font-semibold text-[#618968]">SPP Santri</th>
                                 <th class="px-6 py-4 font-semibold text-[#618968]">Tabungan</th>
-                                <th class="px-6 py-4 font-semibold text-[#618968]">Donatur</th>
+                                <th class="px-6 py-4 font-semibold text-[#618968]">Lainnya</th>
                                 <th class="px-6 py-4 font-bold text-primary bg-primary/5 dark:bg-primary/10">Total Pemasukan</th>
                                 <th class="px-6 py-4 font-bold text-orange-500 bg-orange-50 dark:bg-orange-900/10">Total Pengeluaran</th>
                                 <th class="px-6 py-4 font-bold text-[#111812] dark:text-white text-right">Saldo Bulanan</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-[#2f4532]">
-                            <!-- Row 1 -->
+                            @foreach($months as $m)
                             <tr class="hover:bg-gray-50 dark:hover:bg-[#1f3622] transition-colors">
-                                <td class="px-6 py-4 font-medium text-[#111812] dark:text-white sticky left-0 bg-white dark:bg-[#1a2e1d]">Januari</td>
-                                <td class="px-6 py-4 text-[#618968]">Rp 25.000.000</td>
-                                <td class="px-6 py-4 text-[#618968]">Rp 5.000.000</td>
-                                <td class="px-6 py-4 text-[#618968]">Rp 10.000.000</td>
-                                <td class="px-6 py-4 font-semibold text-primary bg-primary/5 dark:bg-primary/10">Rp 40.000.000</td>
-                                <td class="px-6 py-4 font-semibold text-orange-500 bg-orange-50 dark:bg-orange-900/10">Rp 15.000.000</td>
-                                <td class="px-6 py-4 font-bold text-[#111812] dark:text-white text-right">Rp 25.000.000</td>
+                                <td class="px-6 py-4 font-medium text-[#111812] dark:text-white sticky left-0 bg-white dark:bg-[#1a2e1d]">{{ $m['name'] }}</td>
+                                <td class="px-6 py-4 text-[#618968]">Rp {{ number_format($m['spp'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-[#618968]">Rp {{ number_format($m['tabungan'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 text-[#618968]">Rp {{ number_format($m['lain'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 font-semibold text-primary bg-primary/5 dark:bg-primary/10">Rp {{ number_format($m['masuk'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 font-semibold text-orange-500 bg-orange-50 dark:bg-orange-900/10">Rp {{ number_format($m['keluar'], 0, ',', '.') }}</td>
+                                <td class="px-6 py-4 font-bold text-[#111812] dark:text-white text-right">Rp {{ number_format($m['saldo'], 0, ',', '.') }}</td>
                             </tr>
-                            <!-- More rows... -->
+                            @endforeach
                         </tbody>
                      </table>
                 </div>
@@ -177,21 +189,21 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <!-- Row 1 -->
+                    @foreach($months as $m)
                     <tr class="border-b border-black/50">
-                        <td class="py-1 px-2 border-r border-black">Januari</td>
-                        <td class="py-1 px-2 text-right border-r border-black">Rp 40.000.000</td>
-                        <td class="py-1 px-2 text-right border-r border-black">Rp 15.000.000</td>
-                        <td class="py-1 px-2 text-right font-bold">Rp 25.000.000</td>
+                        <td class="py-1 px-2 border-r border-black">{{ $m['name'] }}</td>
+                        <td class="py-1 px-2 text-right border-r border-black">Rp {{ number_format($m['masuk'], 0, ',', '.') }}</td>
+                        <td class="py-1 px-2 text-right border-r border-black">Rp {{ number_format($m['keluar'], 0, ',', '.') }}</td>
+                        <td class="py-1 px-2 text-right font-bold">Rp {{ number_format($m['saldo'], 0, ',', '.') }}</td>
                     </tr>
-                    <!-- Filter other rows if needed or iterate -->
+                    @endforeach
 
                     <!-- Total Footer -->
                      <tr class="border-t-2 border-black font-bold">
                         <td class="py-2 px-2 text-right uppercase border-r border-black">Total</td>
-                        <td class="py-2 px-2 text-right border-r border-black text-green-700">Rp 850.000.000</td>
-                        <td class="py-2 px-2 text-right border-r border-black text-red-600">Rp 600.000.000</td>
-                        <td class="py-2 px-2 text-right text-black">Rp 400.000.000</td>
+                        <td class="py-2 px-2 text-right border-r border-black text-green-700">Rp {{ number_format($totalPemasukanTahun, 0, ',', '.') }}</td>
+                        <td class="py-2 px-2 text-right border-r border-black text-red-600">Rp {{ number_format($totalPengeluaranTahun, 0, ',', '.') }}</td>
+                        <td class="py-2 px-2 text-right text-black">Rp {{ number_format($saldoAkhir, 0, ',', '.') }}</td>
                     </tr>
                 </tbody>
             </table>

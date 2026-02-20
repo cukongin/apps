@@ -34,21 +34,17 @@ class TagihanController extends \App\Http\Controllers\Controller
         // Recalculate status based on new amount
         \App\Keuangan\Services\BillService::updateStatus($tagihan);
 
-        return redirect()->route('keuangan.santri.keuangan.index', $tagihan->siswa_id)
-            ->with('success', 'Data tagihan berhasil diperbarui.');
+        return back()->with('success', 'Data tagihan berhasil diperbarui.');
     }
 
     public function destroy($id)
     {
         $tagihan = Tagihan::findOrFail($id);
-        $siswa_id = $tagihan->siswa_id;
 
         $tagihan->transaksis()->delete();
-
         $tagihan->delete();
 
-        return redirect()->route('keuangan.santri.keuangan.index', $siswa_id)
-            ->with('success', 'Tagihan dan riwayat pembayarannya berhasil dihapus.');
+        return back()->with('success', 'Tagihan berhasil dihapus.');
     }
 
     public function waive($id)

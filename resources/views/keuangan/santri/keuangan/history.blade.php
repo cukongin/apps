@@ -42,8 +42,10 @@
             </div>
         </div>
 
-        <!-- Payment History Table -->
-        <div class="bg-white dark:bg-[#1a2e1d] rounded-xl shadow-sm border border-[#e0e8e1] dark:border-[#2a3a2d] overflow-hidden mb-6">
+        <!-- Payment History Content -->
+
+        <!-- Desktop Table View -->
+        <div class="hidden md:block bg-white dark:bg-[#1a2e1d] rounded-xl shadow-sm border border-[#e0e8e1] dark:border-[#2a3a2d] overflow-hidden mb-6">
             <div class="p-6 border-b border-[#e0e8e1] dark:border-[#2a3a2d] flex justify-between items-center bg-gray-50 dark:bg-[#233827] print:hidden">
                 <h3 class="text-[#111812] dark:text-white text-lg font-bold">Log Aktivitas Keuangan</h3>
             </div>
@@ -90,9 +92,18 @@
                             </td>
                             <td class="px-6 py-4 text-center print:hidden">
                                 @if($item['type'] == 'pembayaran')
-                                <a href="{{ route('keuangan.transaksi.receipt', $item['reference']) }}" class="text-gray-400 hover:text-primary transition-colors" title="Cetak Kuitansi">
-                                    <span class="material-symbols-outlined">print</span>
-                                </a>
+                                <div class="flex items-center justify-center gap-2">
+                                    <a href="{{ route('keuangan.transaksi.receipt', $item['reference']) }}" class="text-gray-400 hover:text-primary transition-colors" title="Cetak Kuitansi">
+                                        <span class="material-symbols-outlined">print</span>
+                                    </a>
+                                    <form action="{{ route('keuangan.pembayaran.destroy', $item['reference']) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pembayaran ini? Saldo tabungan (jika dipakai) akan dikembalikan.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="text-gray-400 hover:text-red-500 transition-colors" title="Hapus Pembayaran">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </form>
+                                </div>
                                 @endif
                             </td>
                         </tr>
@@ -107,10 +118,65 @@
                     </tbody>
                 </table>
             </div>
-        <div class="p-6 bg-gray-50 dark:bg-[#142617] flex justify-between items-center text-sm print:hidden">
-            <p class="text-[#618968] dark:text-[#a0c2a7]">Menampilkan {{ $history->count() }} aktivitas terbaru</p>
+            <div class="p-6 bg-gray-50 dark:bg-[#142617] flex justify-between items-center text-sm print:hidden">
+                <p class="text-[#618968] dark:text-[#a0c2a7]">Menampilkan {{ $history->count() }} aktivitas terbaru</p>
+            </div>
         </div>
-    </div>
+
+        <!-- Mobile Card View -->
+        <div class="md:hidden space-y-4 mb-6">
+            @forelse($history as $item)
+            <div class="bg-white dark:bg-[#1a2e1d] p-4 rounded-xl border border-slate-100 dark:border-[#2a3a2d] shadow-sm relative overflow-hidden group">
+                 <!-- Decorative Icon -->
+                <div class="absolute top-0 right-0 p-4 opacity-[0.03] pointer-events-none">
+                    @if($item['type'] == 'pembayaran')
+                        <span class="material-symbols-outlined text-8xl">payments</span>
+                    @else
+                        <span class="material-symbols-outlined text-8xl">savings</span>
+                    @endif
+                </div>
+
+                <div class="flex justify-between items-start mb-3 relative z-10">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ $item['date']->format('d M Y, H:i') }}</span>
+                        <h4 class="font-bold text-[#111812] dark:text-white leading-tight mb-1">{{ $item['description'] }}</h4>
+                        <span class="inline-flex w-fit items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 capitalize">
+                            {{ $item['details'] }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-end relative z-10 border-t border-slate-50 dark:border-[#2a3a2d] pt-3 mt-1">
+                    <div>
+                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nominal</p>
+                         <p class="text-lg font-black {{ $item['type'] == 'pembayaran' || $item['details'] == 'tarik' ? 'text-red-500' : 'text-green-500' }}">
+                            {{ $item['type'] == 'pembayaran' || $item['details'] == 'tarik' ? '-' : '+' }} Rp {{ number_format($item['nominal'], 0, ',', '.') }}
+                         </p>
+                    </div>
+
+                    @if($item['type'] == 'pembayaran')
+                    <div class="flex gap-2">
+                        <a href="{{ route('keuangan.transaksi.receipt', $item['reference']) }}" class="flex items-center justify-center size-9 bg-slate-50 dark:bg-[#233827] text-slate-400 hover:text-primary hover:bg-white border border-slate-100 dark:border-[#3f5242] rounded-lg transition-all shadow-sm">
+                            <span class="material-symbols-outlined text-lg">print</span>
+                        </a>
+                        <form action="{{ route('keuangan.pembayaran.destroy', $item['reference']) }}" method="POST" onsubmit="return confirm('Yakin hapus? Dana akan dikembalikan.');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="flex items-center justify-center size-9 bg-slate-50 dark:bg-[#233827] text-slate-400 hover:text-red-500 hover:bg-white border border-slate-100 dark:border-[#3f5242] rounded-lg transition-all shadow-sm">
+                                <span class="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                        </form>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @empty
+            <div class="p-8 text-center text-gray-500 bg-white dark:bg-[#1a2e1d] rounded-xl border border-dashed border-gray-300">
+                <span class="material-symbols-outlined text-4xl mb-2 opacity-50">history_edu</span>
+                <p class="text-sm">Belum ada riwayat transaksi.</p>
+            </div>
+            @endforelse
+        </div>
 
         <!-- Footer Help -->
         <div class="flex flex-col md:flex-row p-6 bg-white dark:bg-[#1a2e1d] rounded-xl border border-dashed border-[#618968]/50 items-center gap-4 text-center md:text-left">

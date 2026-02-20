@@ -211,7 +211,7 @@ class TransaksiController extends \App\Http\Controllers\Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('pembayaran.create', $redirectId)->with('success', 'Data pembayaran berhasil diperbarui.');
+        return redirect()->route('keuangan.pembayaran.create', $redirectId)->with('success', 'Data pembayaran berhasil diperbarui.');
     }
 
     public function destroy($id)
@@ -225,8 +225,26 @@ class TransaksiController extends \App\Http\Controllers\Controller
 
                 // Revert payment
                 $tagihan->terbayar -= $transaksi->jumlah_bayar;
+                $tagihan->save(); // Save the tagihan change
 
                 \App\Keuangan\Services\BillService::updateStatus($tagihan);
+
+                // If paid via Tabungan, refund the balance
+                if ($transaksi->metode_pembayaran == 'tabungan') {
+                    $siswa = $tagihan->siswa;
+                    $siswa->saldo_tabungan += $transaksi->jumlah_bayar;
+                    $siswa->save();
+
+                    // Record Refund in Tabungan History
+                    \App\Keuangan\Models\Tabungan::create([
+                        'siswa_id' => $siswa->id,
+                        'tipe' => 'setor', // Refund counts as deposit
+                        'jumlah' => $transaksi->jumlah_bayar,
+                        'keterangan' => 'Pengembalian Dana (Hapus Pembayaran #' . $transaksi->id . ')',
+                        'saldo_akhir' => $siswa->saldo_tabungan
+                    ]);
+                }
+
                 $transaksi->delete();
             });
 
@@ -237,7 +255,65 @@ class TransaksiController extends \App\Http\Controllers\Controller
             return back()->with('error', $e->getMessage());
         }
 
-        return redirect()->route('pembayaran.create', $redirectId)->with('success', 'Pembayaran berhasil dihapus.');
+        return back()->with('success', 'Pembayaran berhasil dihapus.');
+    }
+
+    public function bulkReset(Request $request)
+    {
+        $request->validate([
+            'student_ids' => 'required|array',
+            'student_ids.*' => 'exists:siswa,id',
+        ]);
+
+        $count = 0;
+        $studentIds = $request->student_ids;
+
+        try {
+            \DB::transaction(function () use ($studentIds, &$count) {
+                // Get all transactions for these students
+                // We need to join tagihan to filter by siswa_id
+                $transactions = \App\Keuangan\Models\Transaksi::whereHas('tagihan', function($q) use ($studentIds) {
+                    $q->whereIn('siswa_id', $studentIds);
+                })->with('tagihan')->get();
+
+                foreach ($transactions as $transaksi) {
+                    $tagihan = $transaksi->tagihan;
+
+                    // Revert payment
+                    $tagihan->terbayar -= $transaksi->jumlah_bayar;
+                    $tagihan->save();
+
+                    \App\Keuangan\Services\BillService::updateStatus($tagihan);
+
+                    // If paid via Tabungan, refund the balance
+                    if ($transaksi->metode_pembayaran == 'tabungan') {
+                        $siswa = $tagihan->siswa;
+                        $siswa->saldo_tabungan += $transaksi->jumlah_bayar;
+                        $siswa->save();
+
+                        // Record Refund in Tabungan History
+                        \App\Keuangan\Models\Tabungan::create([
+                            'siswa_id' => $siswa->id,
+                            'tipe' => 'setor',
+                            'jumlah' => $transaksi->jumlah_bayar,
+                            'keterangan' => 'Pengembalian Dana (Reset Massal)',
+                            'saldo_akhir' => $siswa->saldo_tabungan
+                        ]);
+                    }
+
+                    $transaksi->delete();
+                    $count++;
+                }
+            });
+
+            // Force clear view cache
+            \Illuminate\Support\Facades\Artisan::call('view:clear');
+
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', "Berhasil mereset $count transaksi pembayaran untuk " . count($studentIds) . " santri.");
     }
 
     public function store(Request $request, $id)
@@ -340,6 +416,8 @@ class TransaksiController extends \App\Http\Controllers\Controller
                 }
 
                 // 5. Create Pemasukan (Income) Record - Aggregated
+                // DISABLE: This duplicates income. Pemasukan table should only be for NON-STUDENT income.
+                /*
                 if ($totalBayarNeeded > 0) {
                     // Generate Description
                     $descriptionParts = [];
@@ -397,6 +475,7 @@ class TransaksiController extends \App\Http\Controllers\Controller
                         'tanggal_pemasukan' => now(), // Or request date
                     ]);
                 }
+                */
             });
 
             // 5. Send WhatsApp Notification (After Transaction Commit)
@@ -463,10 +542,10 @@ class TransaksiController extends \App\Http\Controllers\Controller
         }
 
         if ($request->redirect_to == 'index') {
-            return redirect()->route('pembayaran.index', ['class_id' => $siswa->kelas_id])->with('success', 'Pembayaran berhasil diproses.');
+            return redirect()->route('keuangan.pembayaran.index', ['class_id' => $siswa->kelas_id])->with('success', 'Pembayaran berhasil diproses.');
         }
 
-        return redirect()->route('pembayaran.create', $id)->with('success', 'Pembayaran berhasil diproses.');
+        return redirect()->route('keuangan.pembayaran.create', $id)->with('success', 'Pembayaran berhasil diproses.');
     } // Added missing brace
 
     public function history(Request $request)
@@ -489,7 +568,7 @@ class TransaksiController extends \App\Http\Controllers\Controller
                 // Assuming no direct transaction code column, using ID or siswa Name
                 $q->where('id', $term)
                   ->orWhereHas('tagihan.siswa', function($s) use ($term) {
-                      $s->where('nama', 'like', '%' . $term . '%');
+                      $s->where('nama_lengkap', 'like', '%' . $term . '%');
                   });
             });
         }

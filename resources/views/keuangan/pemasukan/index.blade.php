@@ -68,7 +68,20 @@
                         </div>
                         <div class="text-right">
                             <p class="text-xs text-[#618968] uppercase font-bold">Total Terkumpul</p>
-                            <p class="text-2xl font-black text-green-600">Rp {{ number_format(\App\Keuangan\Models\Pemasukan::sum('jumlah'), 0, ',', '.') }}</p>
+                            <p class="text-2xl font-black text-green-600 mb-2">Rp {{ number_format(\App\Keuangan\Models\Pemasukan::sum('jumlah'), 0, ',', '.') }}</p>
+
+                            <form action="{{ route('keuangan.pemasukan.destroy-all') }}" method="POST"
+                                  data-confirm-delete="true"
+                                  data-title="Hapus SEMUA Data?"
+                                  data-message="PERINGATAN: Ini akan menghapus SELURUH riwayat pemasukan lain. Tindakan ini tidak dapat dibatalkan!"
+                                  class="inline-block">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="text-[10px] font-bold text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 px-2 py-1 rounded border border-red-200 transition-colors flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[12px]">delete_forever</span>
+                                    HAPUS SEMUA DATA
+                                </button>
+                            </form>
                         </div>
                     </div>
 

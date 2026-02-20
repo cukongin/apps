@@ -116,55 +116,91 @@ class FinancialService
     }
 
     /**
-     * Get Total Income (All Time)
+     * Get Total Income (All Time or Filtered)
      * Used for Current Balance Calculation
      */
-    public static function getTotalIncome()
+    public static function getTotalIncome($startDate = null, $endDate = null)
     {
-        $pendapatanSiswa = Transaksi::where('metode_pembayaran', '!=', 'Subsidi')->sum('jumlah_bayar');
-        $pemasukanLain = Pemasukan::sum('jumlah');
+        $transaksiQuery = Transaksi::query();
+        $pemasukanQuery = Pemasukan::query();
+
+        if ($startDate && $endDate) {
+            $transaksiQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+            $pemasukanQuery->whereBetween('tanggal_pemasukan', [$startDate, $endDate]);
+        }
+
+        // We use has('tagihan') to ensure data integrity, matching Dashboard logic
+        $pendapatanSiswa = $transaksiQuery->has('tagihan')
+            ->where('metode_pembayaran', '!=', 'Subsidi')
+            ->sum('jumlah_bayar');
+
+        $pemasukanLain = $pemasukanQuery->sum('jumlah');
+
         return $pendapatanSiswa + $pemasukanLain;
     }
 
     /**
-     * Get Total Expense (All Time)
+     * Get Total Expense (All Time or Filtered)
      * Used for Current Balance Calculation
      */
-    public static function getTotalExpense()
+    public static function getTotalExpense($startDate = null, $endDate = null)
     {
-        return Pengeluaran::sum('jumlah');
+        $query = Pengeluaran::query();
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('tanggal_pengeluaran', [$startDate, $endDate]);
+        }
+
+        return $query->sum('jumlah');
     }
 
     /**
      * Get Monthly Summary for Chart (Specific Year)
+     * Optimized: Use Group By SQL (Matches Master)
      */
     public static function getMonthlySummary($year)
     {
-        $months = range(1, 12);
-        $incomeData = [];
-        $expenseData = [];
+        $incomeData = array_fill(1, 12, 0);
+        $expenseData = array_fill(1, 12, 0);
 
-        foreach ($months as $month) {
-            // Start & End of Month
-            $start = Carbon::create($year, $month, 1)->startOfMonth();
-            $end = Carbon::create($year, $month, 1)->endOfMonth();
+        // 1. Transactions (SPP)
+        $monthlySpp = Transaksi::has('tagihan')
+            ->where('metode_pembayaran', '!=', 'Subsidi')
+            ->whereYear('created_at', $year)
+            ->selectRaw('MONTH(created_at) as month, SUM(jumlah_bayar) as total')
+            ->groupBy('month')
+            ->pluck('total', 'month')
+            ->toArray();
 
-            // Income
-            $transaksi = Transaksi::whereBetween('created_at', [$start, $end])
-                ->where('metode_pembayaran', '!=', 'Subsidi')
-                ->sum('jumlah_bayar');
-            $lain = Pemasukan::whereBetween('tanggal_pemasukan', [$start->format('Y-m-d'), $end->format('Y-m-d')])
-                ->sum('jumlah');
-            $incomeData[] = $transaksi + $lain;
+        // 2. Manual Income
+        $monthlyIncome = Pemasukan::whereYear('tanggal_pemasukan', $year)
+            ->selectRaw('MONTH(tanggal_pemasukan) as month, SUM(jumlah) as total')
+            ->groupBy('month')
+            ->pluck('total', 'month')
+            ->toArray();
 
-            // Expense
-            $expenseData[] = Pengeluaran::whereBetween('tanggal_pengeluaran', [$start->format('Y-m-d'), $end->format('Y-m-d')])
-                ->sum('jumlah');
+        // Merge Income Sources
+        foreach ($monthlySpp as $month => $amount) {
+            $incomeData[$month] += $amount;
+        }
+        foreach ($monthlyIncome as $month => $amount) {
+            $incomeData[$month] += $amount;
+        }
+
+        // 3. Expenses
+        $monthlyExpense = Pengeluaran::whereYear('tanggal_pengeluaran', $year)
+            ->selectRaw('MONTH(tanggal_pengeluaran) as month, SUM(jumlah) as total')
+            ->groupBy('month')
+            ->pluck('total', 'month')
+            ->toArray();
+
+        foreach ($monthlyExpense as $month => $amount) {
+            $expenseData[$month] += $amount;
         }
 
         return [
-            'income' => $incomeData,
-            'expense' => $expenseData
+            'income' => array_values($incomeData),
+            'expense' => array_values($expenseData)
         ];
     }
 
@@ -229,7 +265,7 @@ class FinancialService
      */
     public function getArrearsReport($filters = [])
     {
-        $query = \App\Keuangan\Models\Tagihan::with(['siswa.kelas_saat_ini.kelas', 'jenisBiaya', 'siswa.kelas', 'siswa.kategoriKeringanan'])
+        $query = \App\Keuangan\Models\Tagihan::with(['siswa.kelas_saat_ini.kelas', 'jenisBiaya', 'siswa.kelas', 'siswa.kategoriKeringanan.aturanDiskons'])
             ->where('status', '!=', 'lunas');
 
         // Apply Filters

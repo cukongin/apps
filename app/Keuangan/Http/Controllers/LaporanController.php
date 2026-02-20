@@ -49,13 +49,17 @@ class LaporanController extends \App\Http\Controllers\Controller
             })->values();
 
         // 1.B SUBSIDI (Informational Only)
-        $subsidiDetails = Transaksi::with(['tagihan.siswa.kelas', 'tagihan.jenisBiaya'])
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-            ->where('metode_pembayaran', 'Subsidi')
-            ->orderBy('created_at')
+        // 1.B SUBSIDI (Informational Only)
+        // Corrected Logic: Calculate Implicit Discount (Standard Fee - Billed Amount)
+        // Because 'Subsidi' transactions might not exist in the database.
+        $subsidiDetails = \App\Keuangan\Models\Tagihan::with(['siswa.kelas', 'jenisBiaya'])
+            ->join('jenis_biayas', 'tagihans.jenis_biaya_id', '=', 'jenis_biayas.id')
+            ->whereBetween('tagihans.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereRaw('tagihans.jumlah < jenis_biayas.jumlah')
+            ->select('tagihans.*', \Illuminate\Support\Facades\DB::raw('(jenis_biayas.jumlah - tagihans.jumlah) as nilai_subsidi'))
             ->get();
 
-        $totalSubsidi = $subsidiDetails->sum('jumlah_bayar');
+        $totalSubsidi = $subsidiDetails->sum('nilai_subsidi');
 
         // 2. PEMASUKAN LAIN
         $pemasukanLain = Pemasukan::whereBetween('tanggal_pemasukan', [$startDate, $endDate])
@@ -206,6 +210,103 @@ class LaporanController extends \App\Http\Controllers\Controller
         return view('keuangan.laporan.index', compact('ledger', 'groupedLedger', 'startDate', 'endDate', 'financialSummary', 'totalSubsidi', 'subsidiDetails', 'chartData', 'printIncome', 'printExpense'));
     }
 
+    public function tahunan(Request $request) {
+        $year = $request->input('year', date('Y'));
+
+        // 1. Initialize Monthly Data (Jan-Dec)
+        $months = [];
+        for ($i = 1; $i <= 12; $i++) {
+            $months[$i] = [
+                'name' => \Carbon\Carbon::create()->month($i)->locale('id')->isoFormat('MMMM'),
+                'spp' => 0,
+                'tabungan' => 0,
+                'lain' => 0,
+                'masuk' => 0,
+                'keluar' => 0,
+                'saldo' => 0
+            ];
+        }
+
+        // 2. Aggregate Transactions (SPP) - REAL CASH ONLY
+        $transaksis = Transaksi::whereYear('created_at', $year)
+            ->where('metode_pembayaran', '!=', 'Subsidi')
+            ->selectRaw('MONTH(created_at) as month, SUM(jumlah_bayar) as total')
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // 3. Aggregate Tabungan (Savings)
+        $tabungans = \App\Keuangan\Models\Tabungan::whereYear('created_at', $year)
+            ->where('tipe', 'setor')
+            ->selectRaw('MONTH(created_at) as month, SUM(jumlah) as total')
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // 4. Aggregate Pemasukan Lain
+        $pemasukans = Pemasukan::whereYear('tanggal_pemasukan', $year)
+            ->selectRaw('MONTH(tanggal_pemasukan) as month, SUM(jumlah) as total')
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // 5. Aggregate Pengeluaran
+        $pengeluarans = Pengeluaran::whereYear('tanggal_pengeluaran', $year)
+            ->selectRaw('MONTH(tanggal_pengeluaran) as month, SUM(jumlah) as total')
+            ->groupBy('month')
+            ->pluck('total', 'month');
+
+        // 6. Merge Data
+        $totalPemasukanTahun = 0;
+        $totalPengeluaranTahun = 0;
+
+        foreach ($months as $m => $data) {
+            $months[$m]['spp'] = $transaksis[$m] ?? 0;
+            $months[$m]['tabungan'] = $tabungans[$m] ?? 0;
+            $months[$m]['lain'] = $pemasukans[$m] ?? 0;
+
+            $months[$m]['masuk'] = $months[$m]['spp'] + $months[$m]['tabungan'] + $months[$m]['lain'];
+            $months[$m]['keluar'] = $pengeluarans[$m] ?? 0;
+            $months[$m]['saldo'] = $months[$m]['masuk'] - $months[$m]['keluar'];
+
+            $totalPemasukanTahun += $months[$m]['masuk'];
+            $totalPengeluaranTahun += $months[$m]['keluar'];
+        }
+
+        // Summary (Todo: calculated carry forward if needed)
+        $saldoAwal = 0;
+        $saldoAkhir = $saldoAwal + $totalPemasukanTahun - $totalPengeluaranTahun;
+
+        return view('keuangan.laporan.tahunan', compact('months', 'year', 'totalPemasukanTahun', 'totalPengeluaranTahun', 'saldoAwal', 'saldoAkhir'));
+    }
+
+    public function subsidi(Request $request) {
+        $query = Transaksi::with(['tagihan.siswa.kelas.level', 'tagihan.jenisBiaya'])
+            ->where('metode_pembayaran', 'Subsidi');
+
+        // Filter by Date Range if needed
+        if ($request->has('start_date') && $request->has('end_date')) {
+            $query->whereBetween('created_at', [$request->start_date, $request->end_date]);
+        }
+
+        // Get Raw Data first to group by Student
+        $transactions = $query->orderBy('created_at', 'desc')->get();
+
+        // Group by Student
+        $students = $transactions->groupBy(function($item) {
+            return $item->tagihan->siswa_id;
+        })->map(function($items) {
+            $first = $items->first();
+            return [
+                'siswa' => $first->tagihan->siswa,
+                'total_subsidi' => $items->sum('jumlah_bayar'),
+                'history' => $items,
+                'count' => $items->count()
+            ];
+        })->sortByDesc('total_subsidi');
+
+        $totalSubsidiAll = $transactions->sum('jumlah_bayar');
+
+        return view('keuangan.laporan.subsidi', compact('students', 'totalSubsidiAll'));
+    }
+
     public function santri(Request $request) {
         // ... (Legacy Method) ...
         return $this->santriLegacy($request);
@@ -217,33 +318,60 @@ class LaporanController extends \App\Http\Controllers\Controller
     }
 
     public function tunggakan(Request $request) {
-         // ... (Legacy Method) ...
-         return $this->tunggakanLegacy($request);
-    }
-
-    public function tahunan() {
-        return view('keuangan.laporan.tahunan');
-    }
-
-    // --- Private Legacy Methods to keep Class Clean ---
-    private function santriLegacy($request) {
-        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
-
         $query = Transaksi::with(['tagihan.siswa.kelas.level', 'tagihan.jenisBiaya'])
             ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
 
-        $allTransaksis = (clone $query)->get();
+        $realTransaksis = (clone $query)->get();
+
+        // 2. Implicit Subsidies (Virtual Transactions)
+        $implicitSubsidies = \App\Keuangan\Models\Tagihan::with(['siswa.kelas.level', 'jenisBiaya'])
+            ->join('jenis_biayas', 'tagihans.jenis_biaya_id', '=', 'jenis_biayas.id')
+            ->whereBetween('tagihans.created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->whereRaw('tagihans.jumlah < jenis_biayas.jumlah')
+            ->select('tagihans.*', \Illuminate\Support\Facades\DB::raw('(jenis_biayas.jumlah - tagihans.jumlah) as nilai_subsidi'))
+            ->get()
+            ->map(function($tagihan) {
+                // Create a Virtual Transaction Object
+                $t = new Transaksi();
+                $t->id = 'sub_' . $tagihan->id; // Fake ID
+                $t->tagihan_id = $tagihan->id;
+                $t->jumlah_bayar = $tagihan->nilai_subsidi;
+                $t->metode_pembayaran = 'Subsidi';
+                $t->keterangan = 'Otomatis: Keringanan Biaya';
+                $t->created_at = $tagihan->created_at;
+
+                // Manually set relation to avoid needing to query again
+                $t->setRelation('tagihan', $tagihan);
+
+                return $t;
+            });
+
+        // 3. Merge & Sort
+        $allTransaksis = $realTransaksis->concat($implicitSubsidies)->sortByDesc('created_at');
 
         // Stats
         $summary = $allTransaksis->groupBy(function($item) { return $item->tagihan->jenisBiaya->nama ?? 'Lainnya'; })
             ->map(function($group) { return $group->sum('jumlah_bayar'); });
-        $totalPemasukanSantri = $allTransaksis->sum('jumlah_bayar');
+
         $totalCash = $allTransaksis->where('metode_pembayaran', '!=', 'Subsidi')->sum('jumlah_bayar');
         $totalSubsidi = $allTransaksis->where('metode_pembayaran', 'Subsidi')->sum('jumlah_bayar');
+        $totalPemasukanSantri = $totalCash + $totalSubsidi;
 
-        // Screen View Data (Paginated)
-        $transaksis = $query->latest()->paginate(20)->withQueryString();
+        // Screen View Data (Manual Pagination)
+        $page = $request->input('page', 1);
+        $perPage = 20;
+        $offset = ($page - 1) * $perPage;
+
+        $items = $allTransaksis->slice($offset, $perPage)->values();
+
+        $transaksis = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $allTransaksis->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
         $groupedTransaksis = $allTransaksis->sortBy(function($item) { return $item->tagihan->siswa->kelas->level->id ?? 999; })
             ->groupBy(function($item) { return $item->tagihan->siswa->kelas->level->nama ?? 'Lainnya'; });
 
@@ -305,19 +433,59 @@ class LaporanController extends \App\Http\Controllers\Controller
          $activeYear = \App\Models\TahunAjaran::where('status', 'aktif')->first();
         $kelasOptions = \App\Models\Kelas::where('id_tahun_ajaran', $activeYear->id ?? 0)->orderBy('nama_kelas')->get();
         $levels = ['TPQ', 'Ula', 'Wustho', 'Aliya'];
-        // Use Service for complex logic
-        $tagihans = $this->financialService->getArrearsReport(['kelas_id' => $request->kelas_id, 'tingkat' => $request->tingkat]);
-        $totalTunggakan = $tagihans->sum(function($t) { return $t->jumlah - $t->terbayar; });
-        $summary = $tagihans->groupBy(function($item) { return $item->jenisBiaya->nama ?? 'Lainnya'; })->map(function($group) { return $group->sum(function($t) { return $t->jumlah - $t->terbayar; }); });
+        // Use Service to get raw data
+        $rawTagihans = $this->financialService->getArrearsReport(['kelas_id' => $request->kelas_id, 'tingkat' => $request->tingkat]);
+
+        // Filter & Calculate Virtual Arrears (Live Discount Application)
+        $tagihans = $rawTagihans->map(function($t) {
+            $discountAmount = 0;
+
+            // Check for Discount Rules
+            if ($t->siswa && $t->siswa->kategoriKeringanan && $t->siswa->kategoriKeringanan->aturanDiskons) {
+                // Find rule for this bill type
+                $rule = $t->siswa->kategoriKeringanan->aturanDiskons->firstWhere('jenis_biaya_id', $t->jenis_biaya_id);
+
+                if ($rule) {
+                    if ($rule->tipe_diskon == 'percentage' || $rule->tipe_diskon == 'persen') {
+                        $discountAmount = $t->jumlah * ($rule->jumlah / 100);
+                    } elseif ($rule->tipe_diskon == 'nominal') {
+                        $discountAmount = $rule->jumlah;
+                    }
+                }
+            }
+
+            // Implicit Discount Check (Standard - Billed)
+            // Just in case rule is missing but bill was generated lower
+            // Actually, we should take the MAX of intended discount vs implicit discount?
+            // Let's stick to Rule-based first as it overrides everything for "Current Status".
+
+            $effectiveBill = max(0, $t->jumlah - $discountAmount);
+            $remaining = max(0, $effectiveBill - $t->terbayar);
+
+            // Attach temporary attribute for View
+            $t->sisa_tagihan_net = $remaining;
+            $t->discount_applied = $discountAmount;
+
+            return $t;
+        })->filter(function($t) {
+            // Only keep if there is remaining debt (after discount)
+            return $t->sisa_tagihan_net > 0;
+        });
+
+        $totalTunggakan = $tagihans->sum('sisa_tagihan_net');
+
+        $summary = $tagihans->groupBy(function($item) { return $item->jenisBiaya->nama ?? 'Lainnya'; })
+            ->map(function($group) { return $group->sum('sisa_tagihan_net'); });
+
         $classRecap = $tagihans->groupBy(function($item) {
-            $siswa = $item->siswa; // Renamed from santri
+            $siswa = $item->siswa;
             if (!$siswa) return 'Data Korup';
             $kelasObj = $siswa->kelas_saat_ini->kelas ?? null;
             return $kelasObj ? $kelasObj->nama : 'Tanpa Kelas Aktif';
         })->map(function($classBills, $className) {
             $students = $classBills->groupBy('siswa_id')->map(function($studentBills) {
                 $student = $studentBills->first()->siswa;
-                $billTotal = $studentBills->sum(function($t) { return $t->jumlah - $t->terbayar; });
+                $billTotal = $studentBills->sum('sisa_tagihan_net');
                 return ['id' => $student->id, 'nama' => $student->nama, 'nis' => $student->nis, 'total' => $billTotal, 'bills' => $studentBills];
             })->sortByDesc('total');
             return ['nama_kelas' => $className, 'total_tunggakan' => $students->sum('total'), 'student_count' => $students->count(), 'students' => $students];

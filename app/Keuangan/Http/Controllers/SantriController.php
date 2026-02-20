@@ -134,5 +134,32 @@ class SantriController extends \App\Http\Controllers\Controller
             }
         }, 'data-siswa.csv');
     }
-}
+    public function generateBills($id)
+    {
+        $siswa = Siswa::findOrFail($id);
+        \App\Keuangan\Services\BillService::syncForsiswa($siswa);
 
+        if (request()->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Tagihan berhasil digenerate ulang.']);
+        }
+
+        return back()->with('success', 'Tagihan berhasil digenerate ulang berdasarkan konfigurasi aktif.');
+    } // Added missing brace
+
+    public function destroyAllBills($id)
+    {
+        $siswa = Siswa::findOrFail($id);
+
+        // Loop to ensure events/cascades (e.g. transactions) are handled
+        foreach($siswa->tagihans as $tagihan) {
+            $tagihan->transaksis()->delete();
+            $tagihan->delete();
+        }
+
+        if (request()->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Semua tagihan berhasil dihapus.']);
+        }
+
+        return back()->with('success', 'Semua tagihan berhasil dihapus.');
+    }
+}
