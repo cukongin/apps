@@ -49,10 +49,10 @@ class BillService
                     ->where('jenis_biaya_id', $biaya->id)
                     ->first();
 
-// Debug line removed
+    // Debug line removed
 
-                if ($aturan) {
-// Debug line removed
+                    if ($aturan) {
+    // Debug line removed
 
                     if ($aturan->tipe_diskon == 'nominal') {
                         $discountAmount = $aturan->jumlah;
@@ -61,8 +61,6 @@ class BillService
                         $discountAmount = $originalAmount * ($aturan->jumlah / 100);
                         $discountInfo = ' (Disc. ' . (0 + $aturan->jumlah) . '% - ' . $siswa->kategoriKeringanan->nama . ')';
                     }
-
-                    file_put_contents('d:/XAMPP/htdocs/siapps/debug_bill_service.log', "Calculated Discount: $discountAmount\n", FILE_APPEND);
 
                     // Cap discount at original amount
                     if ($discountAmount > $originalAmount) $discountAmount = $originalAmount;
@@ -209,10 +207,14 @@ class BillService
         // Or we use DB raw.
     }
     /**
-     * Update Tagihan Status based on Payment Amount
+     * Update Tagihan Status based on Payment Amount (Self-Healing)
      */
     public static function updateStatus(Tagihan $tagihan)
     {
+        // Self-Healing: Recalculate 'terbayar' from actual transactions (Source of Truth)
+        $realPaid = $tagihan->transaksis()->sum('jumlah_bayar');
+        $tagihan->terbayar = $realPaid;
+
         // Calculate status dynamically
         if ($tagihan->terbayar >= $tagihan->jumlah) {
             $tagihan->status = 'lunas';
