@@ -1,69 +1,37 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
-@section('title', 'Monitoring Nilai - ' . $kelas->nama_kelas)
+@section('title', 'Monitoring Nilai' . ($kelas ? ' - ' . $kelas->nama_kelas : ''))
 
 @section('content')
+@if(!$kelas)
+<div class="mb-6 space-y-4 shrink-0">
+    <div class="flex items-center gap-3">
+        <div class="p-3 bg-primary/10 rounded-xl text-primary">
+            <span class="material-symbols-outlined text-3xl">query_stats</span>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Monitoring Nilai Kelas</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Pilih kelas untuk memonitor nilai siswa.</p>
+        </div>
+    </div>
+</div>
+<x-admin-class-grid :classes="$allClasses" :route-name="request()->route()->getName()" />
+@else
 <div class="flex flex-col gap-6">
     <!-- Header -->
     <div class="flex flex-col gap-4">
         @if(auth()->user()->isAdmin() || auth()->user()->isTu())
-        <div class="card-boss !p-4 flex flex-col md:flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800/50 mb-2">
-            <div class="flex items-center gap-2 text-slate-500 font-bold text-xs uppercase tracking-wider min-w-fit">
-                <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
-                Filter Admin
-            </div>
-            <form action="{{ route('walikelas.monitoring') }}" method="GET" class="flex flex-col md:flex-row w-full gap-3">
-                 <!-- Jenjang Selector -->
-                <div class="relative group w-full md:w-auto">
-                    <select name="jenjang" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[100px]" onchange="this.form.submit()">
-                        @foreach(['MI', 'MTS'] as $j)
-                            <option value="{{ $j }}" {{ (request('jenjang') == $j || (empty(request('jenjang')) && $loop->first)) ? 'selected' : '' }}>
-                                {{ $j }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 group-hover:text-primary transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">school</span>
-                    </div>
-                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                        <span class="material-symbols-outlined text-[18px]">expand_more</span>
-                    </div>
-                </div>
+        <div class="card-boss !p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50 dark:bg-slate-800/50 mb-2">
+            <!-- Back Button -->
+            <a href="{{ route('walikelas.monitoring') }}" class="btn-boss bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-4 py-2.5 flex-1 md:flex-none">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                <span class="hidden md:inline font-bold">Kembali ke Pilihan Kelas</span>
+            </a>
 
-                <!-- Class Selector -->
-                <div class="relative group w-full md:w-auto">
-                    <select name="kelas_id" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[200px]" onchange="this.form.submit()">
-                        @php
-                            $yId = $activeYear->id ?? $kelas->id_tahun_ajaran;
-                            $q = \App\Models\Kelas::where('id_tahun_ajaran', $yId)->orderBy('nama_kelas');
-                            if(request('jenjang')) {
-                                $q->whereHas('jenjang', function($query) {
-                                    $query->where('kode', request('jenjang'));
-                                });
-                            }
-                            $allClassesInYear = $q->get();
-                        @endphp
-
-                        @if($allClassesInYear->count() == 0)
-                            <option value="">Tidak ada kelas</option>
-                        @endif
-
-                        @foreach($allClassesInYear as $kls)
-                            <option value="{{ $kls->id }}" {{ $kelas->id == $kls->id ? 'selected' : '' }}>
-                                {{ $kls->nama_kelas }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 group-hover:text-primary transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">class</span>
-                    </div>
-                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                        <span class="material-symbols-outlined text-[18px]">expand_more</span>
-                    </div>
-                </div>
-
-                 <!-- Period Selector -->
-                <div class="relative group w-full md:w-auto">
+            <!-- Period Selector -->
+            <form action="{{ route('walikelas.monitoring') }}" method="GET" class="flex flex-col md:flex-row w-full md:w-auto gap-3">
+                 <input type="hidden" name="kelas_id" value="{{ request('kelas_id') ?: ($kelas->id ?? '') }}">
+                 <div class="relative group w-full md:w-auto">
                     @if(isset($allPeriods) && $allPeriods->count() > 0)
                     <select name="periode_id" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[200px]" onchange="this.form.submit()">
                         @foreach($allPeriods as $prd)
@@ -104,7 +72,7 @@
                     <div class="flex items-center gap-3">
                          <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-100">
                             <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            Aman (≥ 86)
+                            Aman (= 86)
                         </span>
                         <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-100">
                              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
@@ -283,4 +251,6 @@
         </div>
     </div>
 </div>
+@endif
 @endsection
+

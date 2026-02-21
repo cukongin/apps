@@ -495,19 +495,19 @@ class SettingsController extends Controller
         // 2. Save Predicates (Recreate)
         // Verify input structure
         if ($request->has('predikat') && is_array($request->predikat)) {
-            \App\Models\PredikatNilai::where('id_tahun_ajaran', $activeYear->id)
-                ->where('jenjang', $jenjang)
-                ->delete();
-
             foreach ($request->predikat as $grade => $data) {
-                \App\Models\PredikatNilai::create([
-                    'id_tahun_ajaran' => $activeYear->id,
-                    'jenjang' => $jenjang,
-                    'grade' => $grade,
-                    'min_score' => $data['min'] ?? 0,
-                    'max_score' => $data['max'] ?? 0,
-                    'deskripsi' => $data['deskripsi'] ?? ''
-                ]);
+                \App\Models\PredikatNilai::updateOrCreate(
+                    [
+                        'id_tahun_ajaran' => $activeYear->id,
+                        'jenjang' => $jenjang,
+                        'grade' => $grade,
+                    ],
+                    [
+                        'min_score' => $data['min'] ?? 0,
+                        'max_score' => $data['max'] ?? 0,
+                        'deskripsi' => $data['deskripsi'] ?? ''
+                    ]
+                );
             }
         }
 

@@ -1,8 +1,22 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
-@section('title', 'Input Absensi - ' . $kelas->nama_kelas)
+@section('title', 'Input Absensi' . ($kelas ? ' - ' . $kelas->nama_kelas : ''))
 
 @section('content')
+@if(!$kelas)
+<div class="mb-6 space-y-4 shrink-0">
+    <div class="flex items-center gap-3">
+        <div class="p-3 bg-primary/10 rounded-xl text-primary">
+            <span class="material-symbols-outlined text-3xl">fact_check</span>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Input Absensi & Kepribadian</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Pilih kelas untuk menginput data absensi dan kepribadian siswa.</p>
+        </div>
+    </div>
+</div>
+<x-admin-class-grid :classes="$allClasses" :route-name="request()->route()->getName()" />
+@else
 <div class="flex flex-col gap-6">
     <!-- Header & Filters Stack -->
     <div class="flex flex-col gap-4">
@@ -56,54 +70,19 @@
             </div>
         </div>
 
-        <!-- Admin Filter (Only visible for Admin/TU) -->
+        <!-- Admin / TU Action & Filter -->
         @if(auth()->user()->isAdmin() || auth()->user()->isTu())
-        <div class="card-boss !p-4 flex flex-col md:flex-row items-center gap-4 bg-slate-50 dark:bg-slate-800/50">
-            <div class="flex items-center gap-2 text-slate-500 font-bold text-xs uppercase tracking-wider min-w-fit">
-                <span class="material-symbols-outlined text-[18px]">admin_panel_settings</span>
-                Filter Admin
-            </div>
-            <form action="{{ url()->current() }}" method="GET" class="flex flex-col md:flex-row w-full gap-3">
-                 <!-- Jenjang Selector -->
-                <div class="relative group w-full md:w-auto">
-                    <select name="jenjang" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[100px]" onchange="this.form.submit()">
-                        @foreach(['MI', 'MTS'] as $j)
-                            <option value="{{ $j }}" {{ (request('jenjang') == $j || (empty(request('jenjang')) && $loop->first)) ? 'selected' : '' }}>
-                                {{ $j }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 group-hover:text-primary transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">school</span>
-                    </div>
-                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                        <span class="material-symbols-outlined text-[18px]">expand_more</span>
-                    </div>
-                </div>
+        <div class="card-boss !p-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50 dark:bg-slate-800/50">
+            <!-- Back Button -->
+            <a href="{{ route('walikelas.absensi') }}" class="btn-boss bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                <span>Kembali ke Pilihan Kelas</span>
+            </a>
 
-                <!-- Class Selector -->
-                <div class="relative group w-full md:w-auto">
-                    <select name="kelas_id" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[200px]" onchange="this.form.submit()">
-                        @if(isset($allClasses) && $allClasses->count() > 0)
-                            @foreach($allClasses as $kls)
-                                <option value="{{ $kls->id }}" {{ isset($kelas) && $kelas->id == $kls->id ? 'selected' : '' }}>
-                                    {{ $kls->nama_kelas }}
-                                </option>
-                            @endforeach
-                        @else
-                            <option value="">Tidak ada kelas</option>
-                        @endif
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-400 group-hover:text-primary transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">class</span>
-                    </div>
-                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                        <span class="material-symbols-outlined text-[18px]">expand_more</span>
-                    </div>
-                </div>
-
-                 <!-- Period Selector -->
-                <div class="relative group w-full md:w-auto">
+            <!-- Period Selector -->
+            <form action="{{ url()->current() }}" method="GET" class="flex flex-col md:flex-row w-full md:w-auto gap-3">
+                 <input type="hidden" name="kelas_id" value="{{ request('kelas_id') ?: ($kelas->id ?? '') }}">
+                 <div class="relative group w-full md:w-auto">
                     <select name="periode_id" class="input-boss appearance-none !bg-none !pl-9 !pr-8 w-full md:min-w-[200px]" onchange="this.form.submit()">
                         @foreach($allPeriods as $p)
                             <option value="{{ $p->id }}" {{ $periode->id == $p->id ? 'selected' : '' }}>
@@ -406,4 +385,6 @@
     // Run init
     document.addEventListener('DOMContentLoaded', initSync);
 </script>
+@endif
 @endsection
+

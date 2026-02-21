@@ -467,14 +467,23 @@ class ReportController extends Controller
         }
 
         // Handle Class Selection
-        if ($request->class_id) {
-            $selectedClass = Kelas::find($request->class_id);
-        } elseif ($classes->count() > 0) {
+        $isUserAdminTu = ($user->role == 'admin' || $user->id == 1 || $user->isStaffTu());
+
+        $classIdParam = $request->class_id ?? $request->kelas_id;
+        if ($classIdParam) {
+            $selectedClass = Kelas::find($classIdParam);
+        } elseif ($classes->count() > 0 && !$isUserAdminTu) {
             $selectedClass = $classes->first();
         }
 
         if ($selectedClass) {
             $students = $selectedClass->anggota_kelas()->with('siswa')->get()->sortBy('siswa.nama_lengkap');
+        }
+
+        // Eager load counts for classes if we are showing the grid (meaning no class selected)
+        if (!$selectedClass && $classes instanceof \Illuminate\Database\Eloquent\Collection) {
+            $classes->loadCount('anggota_kelas');
+            $classes->load('wali_kelas.data_guru', 'jenjang');
         }
 
         return view('reports.index', compact('classes', 'selectedClass', 'students', 'years', 'selectedYear'));
@@ -710,46 +719,24 @@ class ReportController extends Controller
 
         $reports = [];
 
-        // 2. Loop and Gather Data
-        foreach ($students as $ak) {
-            $reports[] = $this->gatherReportData($ak->siswa, $class, $activeYear);
-        }
+        // --- OPTIMASI N+1 (PRE-FETCH DATA) ---
+        $isMts = $class->tingkat_kelas > 6 || stripos($class->nama_kelas, 'mts') !== false;
+        $jenjangCode = $isMts ? 'MTS' : 'MI';
 
-        // Fetch Titimangsa
-        $jenjangKey = strtolower($class->jenjang->kode);
-        $titimangsa = \App\Models\GlobalSetting::val('titimangsa_' . $jenjangKey);
-        $titimangsaTempat = \App\Models\GlobalSetting::val('titimangsa_tempat_' . $jenjangKey);
-
-        return view('reports.rapor_print_all', compact('class', 'activeYear', 'reports', 'titimangsa', 'titimangsaTempat'));
-    }
-
-    private function gatherReportData($student, $class, $activeYear)
-    {
-         // 2b. ROBUST JENJANG DETECTION (Fixes MI/MTS Mismatch)
-         $isMts = $class->tingkat_kelas > 6 || stripos($class->nama_kelas, 'mts') !== false;
-         $jenjangCode = $isMts ? 'MTS' : 'MI';
-
-         // 3. Fetch All Periods for this Year (Sort by name or ID)
-         // Filter by ROBUST Jenjang
+        // 1. Tarik Semua Periode
         $allPeriods = Periode::where('id_tahun_ajaran', $activeYear->id)
             ->where('lingkup_jenjang', $jenjangCode)
             ->orderBy('id', 'asc')
             ->get();
+        $periodIds = $allPeriods->pluck('id');
 
-        // 4. Fetch Grades for ALL Periods
-        $rawGrades = NilaiSiswa::where('id_siswa', $student->id)
-            ->where('id_kelas', $class->id)
-            ->whereIn('id_periode', $allPeriods->pluck('id'))
-            ->get();
+        // 2. Tarik Semua Nilai Sekelas
+        $allGrades = NilaiSiswa::where('id_kelas', $class->id)
+            ->whereIn('id_periode', $periodIds)
+            ->get()
+            ->groupBy('id_siswa');
 
-
-
-        $cumulativeGrades = [];
-        foreach ($rawGrades as $g) {
-            $cumulativeGrades[$g->id_mapel][$g->id_periode] = $g;
-        }
-
-        // 5. Fetch Mapels (Grouped & Sorted)
+        // 3. Tarik Semua Mapel (Dikelompokkan berdasarkan kategori)
         $mapelGroups = PengajarMapel::with('mapel')
             ->where('id_kelas', $class->id)
             ->get()
@@ -759,74 +746,204 @@ class ReportController extends Controller
             ->groupBy('mapel.kategori')
             ->sortKeys();
 
-        // 6. Fetch Attendance & Remarks
-        $attendance = DB::table('catatan_kehadiran')
-            ->where('id_siswa', $student->id)
+        // 4. Tarik Semua Kehadiran Sekelas
+        $allAttendance = DB::table('catatan_kehadiran')
             ->where('id_kelas', $class->id)
-            ->whereIn('id_periode', $allPeriods->pluck('id'))
+            ->whereIn('id_periode', $periodIds)
             ->get()
-            ->keyBy('id_periode');
+            ->groupBy('id_siswa');
 
-        $remarks = DB::table('catatan_wali_kelas')
-            ->where('id_siswa', $student->id)
+        // 5. Tarik Semua Catatan Wali Sekelas
+        $allRemarks = DB::table('catatan_wali_kelas')
             ->where('id_kelas', $class->id)
-            ->whereIn('id_periode', $allPeriods->pluck('id'))
+            ->whereIn('id_periode', $periodIds)
             ->orderBy('id_periode', 'asc')
             ->get()
-            ->keyBy('id_periode');
+            ->groupBy('id_siswa');
 
-        // 7. Ekskuls
-        $ekskuls = DB::table('nilai_ekskul')
+        // 6. Tarik Semua Ekskul Sekelas
+        $allEkskuls = DB::table('nilai_ekskul')
             ->join('ekstrakurikuler', 'nilai_ekskul.id_ekskul', '=', 'ekstrakurikuler.id')
-            ->where('nilai_ekskul.id_siswa', $student->id)
             ->where('nilai_ekskul.id_kelas', $class->id)
-            ->whereIn('nilai_ekskul.id_periode', $allPeriods->pluck('id'))
-            ->select('ekstrakurikuler.nama_ekskul', 'nilai_ekskul.predikat as nilai', 'nilai_ekskul.keterangan', 'nilai_ekskul.id_periode')
+            ->whereIn('nilai_ekskul.id_periode', $periodIds)
+            ->select('ekstrakurikuler.nama_ekskul', 'nilai_ekskul.predikat as nilai', 'nilai_ekskul.keterangan', 'nilai_ekskul.id_periode', 'nilai_ekskul.id_siswa')
+            ->get()
+            ->groupBy('id_siswa');
+
+        // 7. Tarik KKM Global Sekali Saja
+        $kkmMapels = DB::table('kkm_mapel')
+            ->where('id_tahun_ajaran', $activeYear->id)
+            ->where('jenjang_target', $jenjangCode)
+            ->pluck('nilai_kkm', 'id_mapel');
+
+        $globalKkm = \App\Models\Jenjang::getSettings($jenjangCode)->kkm_default;
+
+        // 8. Tarik Semua Promosi Massal
+        $allPromotions = DB::table('promotion_decisions')
+            ->where('id_kelas', $class->id)
+            ->where('id_tahun_ajaran', $activeYear->id)
+            ->get()
+            ->keyBy('id_siswa');
+
+        // 9. Identitas Sekolah
+        $school = IdentitasSekolah::where('jenjang', $jenjangCode)->first() ?? IdentitasSekolah::first();
+        if (!$school) {
+             $school = new IdentitasSekolah(['nama_sekolah' => '[DATA SEKOLAH BELUM DIISI]', 'alamat' => '-']);
+        }
+
+        // 10. Pre-kalkulasi Rank & Statistik Sekelas
+        $classGradesByPeriod = NilaiSiswa::select('id_siswa', 'id_periode', DB::raw('SUM(nilai_akhir) as total_score'))
+            ->where('id_kelas', $class->id)
+            ->whereIn('id_periode', $periodIds)
+            ->groupBy('id_siswa', 'id_periode')
+            ->orderBy('id_periode')
+            ->orderBy('total_score', 'desc')
             ->get()
             ->groupBy('id_periode');
 
-        // 8. School Identity (Fetch by Jenjang)
-    $targetJenjang = $jenjangCode;
-    $school = IdentitasSekolah::where('jenjang', $targetJenjang)->first();
+        $mapelCounts = NilaiSiswa::select('id_siswa', 'id_periode', DB::raw('count(*) as m_count'))
+            ->where('id_kelas', $class->id)
+            ->whereIn('id_periode', $periodIds)
+            ->groupBy('id_siswa', 'id_periode')
+            ->get()
+            ->groupBy('id_siswa');
 
-    // Fallback to default (MI) if specific jenjang config not found
-    if (!$school) {
-        $school = IdentitasSekolah::first();
+        $totalStudents = $students->count();
+
+        // Kemas Prefetched Data
+        $prefetchedData = [
+            'jenjangCode' => $jenjangCode,
+            'allPeriods' => $allPeriods,
+            'allGrades' => $allGrades,
+            'mapelGroups' => $mapelGroups,
+            'allAttendance' => $allAttendance,
+            'allRemarks' => $allRemarks,
+            'allEkskuls' => $allEkskuls,
+            'kkmMapels' => $kkmMapels,
+            'globalKkm' => $globalKkm,
+            'allPromotions'  => $allPromotions,
+            'school' => $school,
+            'classGradesByPeriod' => $classGradesByPeriod,
+            'mapelCounts' => $mapelCounts,
+            'totalStudents' => $totalStudents
+        ];
+        // --- SELESAI OPTIMASI (PRE-FETCH) ---
+
+        // 2. Loop and Gather Data Cepat!
+        foreach ($students as $ak) {
+            $reports[] = $this->gatherReportData($ak->siswa, $class, $activeYear, $prefetchedData);
+        }
+
+        // Fetch Titimangsa
+        $titimangsa = \App\Models\GlobalSetting::val('titimangsa_' . strtolower($jenjangCode));
+        $titimangsaTempat = \App\Models\GlobalSetting::val('titimangsa_tempat_' . strtolower($jenjangCode));
+
+        return view('reports.rapor_print_all', compact('class', 'activeYear', 'reports', 'titimangsa', 'titimangsaTempat'));
     }
 
-    if (!$school) {
-         $school = new IdentitasSekolah([
-            'nama_sekolah' => '[DATA SEKOLAH BELUM DIISI]',
-            'alamat' => '-',
-         ]);
-    }
+    private function gatherReportData($student, $class, $activeYear, $pref = null)
+    {
+         // 2b. ROBUST JENJANG DETECTION
+         $isMts = $class->tingkat_kelas > 6 || stripos($class->nama_kelas, 'mts') !== false;
+         $jenjangCode = $pref['jenjangCode'] ?? ($isMts ? 'MTS' : 'MI');
+
+         // 3. Fetch All Periods
+         $allPeriods = $pref['allPeriods'] ?? Periode::where('id_tahun_ajaran', $activeYear->id)
+            ->where('lingkup_jenjang', $jenjangCode)
+            ->orderBy('id', 'asc')
+            ->get();
+
+        // 4. Fetch Grades for ALL Periods
+        if ($pref && isset($pref['allGrades'])) {
+            $rawGrades = $pref['allGrades'][$student->id] ?? collect([]);
+        } else {
+            $rawGrades = NilaiSiswa::where('id_siswa', $student->id)
+                ->where('id_kelas', $class->id)
+                ->whereIn('id_periode', $allPeriods->pluck('id'))
+                ->get();
+        }
+
+        $cumulativeGrades = [];
+        foreach ($rawGrades as $g) {
+            $cumulativeGrades[$g->id_mapel][$g->id_periode] = $g;
+        }
+
+        // 5. Fetch Mapels
+        $mapelGroups = $pref['mapelGroups'] ?? PengajarMapel::with('mapel')
+            ->where('id_kelas', $class->id)
+            ->get()
+            ->sortBy(function($item) {
+                return ($item->mapel->kategori ?? 'Z') . '#' . $item->mapel->nama_mapel;
+            })
+            ->groupBy('mapel.kategori')
+            ->sortKeys();
+
+        // 6. Fetch Attendance & Remarks
+        if ($pref && isset($pref['allAttendance'])) {
+            $attendance = ($pref['allAttendance'][$student->id] ?? collect([]))->keyBy('id_periode');
+            $remarks = ($pref['allRemarks'][$student->id] ?? collect([]))->keyBy('id_periode');
+        } else {
+            $attendance = DB::table('catatan_kehadiran')
+                ->where('id_siswa', $student->id)
+                ->where('id_kelas', $class->id)
+                ->whereIn('id_periode', $allPeriods->pluck('id'))
+                ->get()
+                ->keyBy('id_periode');
+
+            $remarks = DB::table('catatan_wali_kelas')
+                ->where('id_siswa', $student->id)
+                ->where('id_kelas', $class->id)
+                ->whereIn('id_periode', $allPeriods->pluck('id'))
+                ->orderBy('id_periode', 'asc')
+                ->get()
+                ->keyBy('id_periode');
+        }
+
+        // 7. Ekskuls
+        if ($pref && isset($pref['allEkskuls'])) {
+             $ekskuls = ($pref['allEkskuls'][$student->id] ?? collect([]))->groupBy('id_periode');
+        } else {
+            $ekskuls = DB::table('nilai_ekskul')
+                ->join('ekstrakurikuler', 'nilai_ekskul.id_ekskul', '=', 'ekstrakurikuler.id')
+                ->where('nilai_ekskul.id_siswa', $student->id)
+                ->where('nilai_ekskul.id_kelas', $class->id)
+                ->whereIn('nilai_ekskul.id_periode', $allPeriods->pluck('id'))
+                ->select('ekstrakurikuler.nama_ekskul', 'nilai_ekskul.predikat as nilai', 'nilai_ekskul.keterangan', 'nilai_ekskul.id_periode')
+                ->get()
+                ->groupBy('id_periode');
+        }
+
+        // 8. School Identity
+        $school = $pref['school'] ?? IdentitasSekolah::where('jenjang', $jenjangCode)->first() ?? IdentitasSekolah::first() ?? new IdentitasSekolah(['nama_sekolah' => '[DATA SEKOLAH BELUM DIISI]', 'alamat' => '-']);
 
         // 9. Calculate Statistics
         $stats = [];
-        $totalStudents = $class->anggota_kelas()->count();
+        $totalStudents = $pref['totalStudents'] ?? $class->anggota_kelas()->count();
 
         foreach ($allPeriods as $p) {
-             // Get all students' totals for this period/class to determine rank
-            $classGrades = NilaiSiswa::select('id_siswa', DB::raw('SUM(nilai_akhir) as total_score'))
-                ->where('id_kelas', $class->id)
-                ->where('id_periode', $p->id)
-                ->groupBy('id_siswa')
-                ->orderBy('total_score', 'desc')
-                ->get();
+            if ($pref && isset($pref['classGradesByPeriod'])) {
+                 $periodRankings = $pref['classGradesByPeriod'][$p->id] ?? collect([]);
+                 $myStats = $periodRankings->firstWhere('id_siswa', $student->id);
+                 $myTotal = $myStats ? $myStats->total_score : 0;
+                 $rank = $myStats ? ($periodRankings->search(function($i) use ($student) { return $i->id_siswa == $student->id; }) + 1) : '-';
 
-            $myStats = $classGrades->where('id_siswa', $student->id)->first();
-            $myTotal = $myStats ? $myStats->total_score : 0;
+                 $mCountGroup = $pref['mapelCounts'][$student->id] ?? collect([]);
+                 $mCountStat = $mCountGroup->firstWhere('id_periode', $p->id);
+                 $mapelCount = $mCountStat ? $mCountStat->m_count : 0;
+            } else {
+                 $classGrades = NilaiSiswa::select('id_siswa', DB::raw('SUM(nilai_akhir) as total_score'))
+                    ->where('id_kelas', $class->id)
+                    ->where('id_periode', $p->id)
+                    ->groupBy('id_siswa')
+                    ->orderBy('total_score', 'desc')
+                    ->get();
 
-            $rank = '-';
-            if ($myStats) {
-                 $rank = $classGrades->search(function($item) use ($student) {
-                     return $item->id_siswa == $student->id;
-                 }) + 1;
+                $myStats = $classGrades->where('id_siswa', $student->id)->first();
+                $myTotal = $myStats ? $myStats->total_score : 0;
+                $rank = $myStats ? ($classGrades->search(function($i) use ($student) { return $i->id_siswa == $student->id; }) + 1) : '-';
+
+                $mapelCount = NilaiSiswa::where('id_siswa', $student->id)->where('id_periode', $p->id)->count();
             }
-
-            $mapelCount = NilaiSiswa::where('id_siswa', $student->id)
-                ->where('id_periode', $p->id)
-                ->count();
 
             $myAverage = $mapelCount > 0 ? $myTotal / $mapelCount : 0;
 
@@ -839,19 +956,23 @@ class ReportController extends Controller
         }
 
         // 10. Fetch KKM
-        $kkmMapels = DB::table('kkm_mapel')
+        $kkmMapels = $pref['kkmMapels'] ?? DB::table('kkm_mapel')
             ->where('id_tahun_ajaran', $activeYear->id)
             ->where('jenjang_target', $jenjangCode)
             ->pluck('nilai_kkm', 'id_mapel');
 
-        $globalKkm = \App\Models\Jenjang::getSettings($jenjangCode)->kkm_default;
+        $globalKkm = $pref['globalKkm'] ?? \App\Models\Jenjang::getSettings($jenjangCode)->kkm_default;
 
-        // 11. Fetch Promotion Decision (Auto-Healing)
-        $promotion = DB::table('promotion_decisions')
-            ->where('id_siswa', $student->id)
-            ->where('id_kelas', $class->id)
-            ->where('id_tahun_ajaran', $activeYear->id)
-            ->first();
+        // 11. Fetch Promotion Decision
+        if ($pref && isset($pref['allPromotions'])) {
+            $promotion = $pref['allPromotions'][$student->id] ?? null;
+        } else {
+            $promotion = DB::table('promotion_decisions')
+                ->where('id_siswa', $student->id)
+                ->where('id_kelas', $class->id)
+                ->where('id_tahun_ajaran', $activeYear->id)
+                ->first();
+        }
 
         // If Missing, Trigger Auto-Calculation for this Class
         if (!$promotion) {
@@ -987,15 +1108,18 @@ class ReportController extends Controller
 
         // We need to calculate this for ALL students in the class to get the rank
         // To avoid N+1 performance hit on Bulk Print, we can check if it's already passed or handle it efficiently.
-        // For now, let's implement a per-student calculation which is safer but slower, OR a class-wide one if optimizing.
-        // Given the requirement, let's do a Class-Wide fetch ONCE if not provided.
-        // But since this function is 'gatherReportData', let's stick to calculating for this student properly relative to others.
-
-        // Fetch ALL grades for this class for the WHOLE year
-        $allStudentGrades = NilaiSiswa::where('id_kelas', $class->id)
-            ->whereIn('id_periode', $allPeriods->pluck('id'))
-            ->get()
-            ->groupBy('id_siswa');
+        if ($pref && isset($pref['allGrades'])) {
+             $allStudentGrades = collect();
+             // Format allGrades is groupBy('id_siswa'). We need to flatten it or just use it as is?
+             // Actually it's already grouped by siswa.
+             $allStudentGrades = $pref['allGrades'];
+        } else {
+            // Fetch ALL grades for this class for the WHOLE year
+            $allStudentGrades = NilaiSiswa::where('id_kelas', $class->id)
+                ->whereIn('id_periode', $allPeriods->pluck('id'))
+                ->get()
+                ->groupBy('id_siswa');
+        }
 
         $classAverages = []; // student_id => average
 

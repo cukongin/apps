@@ -1,4 +1,4 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
 @section('title', 'Monitoring Guru')
 
@@ -18,33 +18,14 @@
             @endif
         </div>
         <div class="flex items-center gap-3">
-            <!-- Filter Form -->
-            <form method="GET" class="flex flex-wrap gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                <!-- Jenjang Toggle Buttons -->
-                <div class="flex bg-slate-200 dark:bg-slate-700 p-1 rounded-lg" x-data="{ jenjang: '{{ request('jenjang') }}' }">
-                    <input type="hidden" name="jenjang" :value="jenjang">
-
-                    <button type="button" @click="jenjang = 'MI'; $nextTick(() => $el.closest('form').submit())" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all" :class="jenjang === 'MI' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'">
-                        MI
-                    </button>
-                    <button type="button" @click="jenjang = 'MTS'; $nextTick(() => $el.closest('form').submit())" class="px-3 py-1.5 text-xs font-bold rounded-md transition-all" :class="jenjang === 'MTS' ? 'bg-white dark:bg-slate-800 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400'">
-                        MTS
-                    </button>
-                </div>
-                @if($kelas)
-                <div class="w-px h-6 bg-slate-300 dark:bg-slate-600 my-auto mx-1"></div>
-                <div class="relative group">
-                    <select name="kelas_id" class="appearance-none bg-transparent pl-2 pr-8 py-1.5 text-sm font-bold text-slate-700 dark:text-white rounded-lg focus:outline-none cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition" onchange="this.form.submit()">
-                        @foreach($allClasses as $c)
-                            <option value="{{ $c->id }}" {{ $kelas->id == $c->id ? 'selected' : '' }}>{{ $c->nama_kelas }}</option>
-                        @endforeach
-                    </select>
-                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-                        <span class="material-symbols-outlined text-[18px]">expand_more</span>
-                    </div>
-                </div>
-                @endif
-            </form>
+            @if(auth()->user()->isAdmin() || auth()->user()->isTu())
+            @if($kelas)
+            <a href="{{ route('walikelas.dashboard') }}" class="btn-boss bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                <span>Kembali</span>
+            </a>
+            @endif
+            @endif
 
             @if($kelas)
             <div class="flex gap-2">
@@ -62,6 +43,11 @@
     </div>
 
     @if(!$kelas)
+    @if(auth()->user()->isAdmin() || auth()->user()->isTu())
+        <div class="mt-2">
+            <x-admin-class-grid :classes="$allClasses" route-name="walikelas.dashboard" />
+        </div>
+    @else
     <!-- EMPTY STATE -->
     <div class="flex flex-col items-center justify-center py-20 card-boss border-dashed !bg-slate-50/50 dark:!bg-slate-800/50">
         <div class="bg-white dark:bg-slate-800 p-6 rounded-full mb-4 shadow-sm animate-bounce">
@@ -73,6 +59,7 @@
             <span class="font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{{ request('jenjang') ?? 'ini' }}</span>.
         </p>
     </div>
+    @endif
     @else
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -388,3 +375,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
+

@@ -1,8 +1,22 @@
-﻿@extends('layouts.app')
+@extends('layouts.app')
 
-@section('title', $pageContext['title'])
+@section('title', $kelas ? $pageContext['title'] : 'Kenaikan Kelas')
 
 @section('content')
+@if(!$kelas)
+<div class="mb-6 space-y-4 shrink-0">
+    <div class="flex items-center gap-3">
+        <div class="p-3 bg-primary/10 rounded-xl text-primary">
+            <span class="material-symbols-outlined text-3xl">upgrade</span>
+        </div>
+        <div>
+            <h1 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Kenaikan Kelas</h1>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Pilih kelas untuk mengelola data kenaikan/kelulusan siswa.</p>
+        </div>
+    </div>
+</div>
+<x-admin-class-grid :classes="$allClasses" :route-name="request()->route()->getName()" />
+@else
 <div class="flex flex-col gap-8" x-data="promotionPage()">
     <!-- Header Section -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -68,11 +82,17 @@
                 </div>
 
                 <!-- Filter Dropdowns -->
-                <div x-data="{ open: false }" class="relative z-20">
-                    <button @click="open = !open" class="btn-boss bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 !px-4 !py-2.5 shadow-sm w-full md:w-auto justify-between">
+                <div x-data="{ open: false }" class="relative z-20 flex gap-2 w-full md:w-auto">
+                    <!-- Back Button -->
+                    <a href="{{ route('walikelas.kenaikan.index') }}" class="btn-boss bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-4 py-2.5 flex-1 md:flex-none">
+                        <span class="material-symbols-outlined text-[20px]">arrow_back</span>
+                        <span class="hidden md:inline font-bold">Kembali ke Pilihan Kelas</span>
+                    </a>
+
+                    <button @click="open = !open" class="btn-boss bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 !px-4 !py-2.5 shadow-sm w-full md:w-auto justify-between flex-1 md:flex-none">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-primary">filter_alt</span>
-                            <span>Filter Data</span>
+                            <span>Filter Periode</span>
                         </div>
                         <span class="material-symbols-outlined text-sm transition-transform" :class="open ? 'rotate-180' : ''">expand_more</span>
                     </button>
@@ -84,33 +104,13 @@
                          class="absolute right-0 top-full mt-2 w-full md:w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 p-4 grid gap-3">
 
                         <form action="{{ route('walikelas.kenaikan.index') }}" method="GET" class="contents">
+                             <input type="hidden" name="kelas_id" value="{{ request('kelas_id') ?: ($kelas->id ?? '') }}">
                             <!-- Tahun Ajaran -->
                             <div class="space-y-1">
                                 <label class="text-[10px] font-bold text-slate-400 uppercase">Tahun Ajaran</label>
                                 <select name="year_id" onchange="this.form.submit()" class="input-boss w-full !text-sm">
                                     @foreach($years as $y)
                                         <option value="{{ $y->id }}" {{ $activeYear->id == $y->id ? 'selected' : '' }}>{{ $y->nama }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- Jenjang -->
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Jenjang</label>
-                                <select name="jenjang" onchange="this.form.submit()" class="input-boss w-full !text-sm">
-                                    <option value="">Semua</option>
-                                    @foreach($jenjangs as $j)
-                                        <option value="{{ $j->kode }}" {{ request('jenjang') == $j->kode || ($kelas && $kelas->jenjang->kode == $j->kode) ? 'selected' : '' }}>{{ $j->kode }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <!-- Kelas -->
-                            <div class="space-y-1">
-                                <label class="text-[10px] font-bold text-slate-400 uppercase">Kelas</label>
-                                <select name="kelas_id" onchange="this.form.submit()" class="input-boss w-full !text-sm">
-                                    @foreach($allClasses as $c)
-                                        <option value="{{ $c->id }}" {{ $kelas->id == $c->id ? 'selected' : '' }}>{{ $c->nama_kelas }}</option>
                                     @endforeach
                                 </select>
                             </div>
@@ -867,4 +867,6 @@
         }
     }
 </script>
+@endif
 @endsection
+

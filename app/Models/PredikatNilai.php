@@ -16,4 +16,30 @@ class PredikatNilai extends Model
     {
         return $this->belongsTo(TahunAjaran::class, 'id_tahun_ajaran');
     }
+
+    public static function removeDuplicates()
+    {
+        $duplicates = \Illuminate\Support\Facades\DB::select("
+            SELECT id_tahun_ajaran, jenjang, grade, COUNT(*) as count
+            FROM predikat_nilai
+            GROUP BY id_tahun_ajaran, jenjang, grade
+            HAVING count > 1
+        ");
+
+        foreach ($duplicates as $dup) {
+            if (!$dup->id_tahun_ajaran) continue;
+
+            $records = self::where('id_tahun_ajaran', $dup->id_tahun_ajaran)
+                ->where('jenjang', $dup->jenjang)
+                ->where('grade', $dup->grade)
+                ->orderBy('id', 'asc')
+                ->get();
+
+            $keep = $records->pop(); // Keep the last one
+
+            foreach ($records as $r) {
+                $r->delete();
+            }
+        }
+    }
 }

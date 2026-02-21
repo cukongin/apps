@@ -53,6 +53,7 @@ class SyncClientController extends Controller
             ]);
 
             DB::beginTransaction();
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
             // Sync Users First (FK Dependency)
             if (isset($data['users'])) {
@@ -126,8 +127,14 @@ class SyncClientController extends Controller
             }
             Siswa::reguard();
 
-            DB::commit();
             Log::info('Sync Master Data Completed Successfully');
+
+            // Helper Sanitizer untuk array multidimensi agar `updateOrInsert` tidak error ColumnNotFound / Casting
+            $sanitizeItem = function($item) {
+                $arr = (array)$item;
+                foreach ($arr as $k => $v) if(is_array($v)) unset($arr[$k]);
+                return $arr;
+            };
 
             // 2. Pull Academic Data (Optional: Separate button or same flow)
              $academicResponse = Http::withHeaders(['X-Sync-Token' => $token])
@@ -145,14 +152,14 @@ class SyncClientController extends Controller
                      // Ensure no 'kelas' column error by unsetting checks if needed, but usually raw DB insert is fine if columns match
                     DB::table('nilai_siswa')->updateOrInsert(
                         ['id' => $item['id']],
-                        (array)$item
+                        $sanitizeItem($item)
                     );
                 }
 
                 foreach ($acData['absensi'] as $item) {
                     DB::table('catatan_kehadiran')->updateOrInsert(
                         ['id' => $item['id']],
-                        (array)$item
+                        $sanitizeItem($item)
                     );
                 }
 
@@ -160,7 +167,7 @@ class SyncClientController extends Controller
                     foreach ($acData['catatan'] as $item) {
                         DB::table('catatan_wali_kelas')->updateOrInsert(
                             ['id' => $item['id']],
-                            (array)$item
+                            $sanitizeItem($item)
                         );
                     }
                 }
@@ -169,7 +176,7 @@ class SyncClientController extends Controller
                     foreach ($acData['nilai_ekskul'] as $item) {
                         DB::table('nilai_ekstrakurikuler')->updateOrInsert(
                             ['id' => $item['id']],
-                            (array)$item
+                            $sanitizeItem($item)
                         );
                     }
                 }
@@ -185,20 +192,28 @@ class SyncClientController extends Controller
                 // Sync Master Finance
                 // Server sends 'jenis_biaya' (joined pos_bayar/jenis_bayar) -> insert to 'jenis_biayas'
                 if(isset($finData['jenis_biaya'])) {
-                    foreach ($finData['jenis_biaya'] as $item) DB::table('jenis_biayas')->updateOrInsert(['id' => $item['id']], (array)$item);
+                    foreach ($finData['jenis_biaya'] as $item) DB::table('jenis_biayas')->updateOrInsert(['id' => $item['id']], $sanitizeItem($item));
                 }
 
-                foreach ($finData['kategori_pemasukan'] as $item) DB::table('kategori_pemasukans')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['kategori_pengeluaran'] as $item) DB::table('kategori_pengeluarans')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['kategori_pemasukan'] as $item) DB::table('kategori_pemasukans')->updateOrInsert(['id' => $item['id']], $sanitizeItem($item));
+                foreach ($finData['kategori_pengeluaran'] as $item) DB::table('kategori_pengeluarans')->updateOrInsert(['id' => $item['id']], $sanitizeItem($item));
 
                 // Sync Transactions (Heavy Data)
-                foreach ($finData['tagihan'] as $item) DB::table('tagihans')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['transaksi'] as $item) DB::table('transaksis')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['tagihan'] as $item) DB::table('tagihans')->updateOrInsert(['id' => $item['id']], $sanitizeItem($item));
+                foreach ($finData['transaksi'] as $item) DB::table('transaksis')->updateOrInsert(['id' => $item['id']], $sanitizeItem($item));
 
-                foreach ($finData['pemasukan_lain'] as $item) DB::table('pemasukans')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['pengeluaran_lain'] as $item) DB::table('pengeluarans')->updateOrInsert(['id' => $item['id']], (array)$item);
-                foreach ($finData['tabungan'] as $item) DB::table('tabungans')->updateOrInsert(['id' => $item['id']], (array)$item);
+                foreach ($finData['pemasukan_lain'] as $item) DB::table('pemasukans')->updateOrInsert(['id' => $item['id']], $sanitizeItem($item));
+                foreach ($finData['pengeluaran_lain'] as $item) DB::table('pengeluarans')->updateOrInsert(['id' => $item['id']], $sanitizeItem($item));
+                foreach ($finData['tabungan'] as $item) DB::table('tabungans')->updateOrInsert(['id' => $item['id']], $sanitizeItem($item));
             }
+
+            // [PERBAIKAN KEAMANAN TERPADU]: COMMIT SELURUH TRANSAKSI DI SINI SETELAH SEMUA DATA SELESAI MASUK
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+            DB::commit();
+
+            // Self-Heal: Prune any duplicate logical bills
+            \App\Keuangan\Services\BillService::removeDuplicates();
+            \App\Models\PredikatNilai::removeDuplicates(); // Heal legacy duplicate predicates
 
             // 4. Prepare Summary Data for UI
             $summary = [
@@ -234,8 +249,9 @@ class SyncClientController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;'); // Pastikan key kembali menyala walau gagal
             Log::error('Sync Failed Global', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Error: Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error Sinkronisasi: Data dibatalkan (Rollback) demi mencegah duplikasi. Pesan: ' . $e->getMessage());
         }
     }
 
@@ -488,6 +504,10 @@ class SyncClientController extends Controller
 
                 DB::statement('SET FOREIGN_KEY_CHECKS=1;');
                 DB::commit();
+
+                // Self-Heal: Prune any logical duplicate bills created by different instances
+                \App\Keuangan\Services\BillService::removeDuplicates();
+                \App\Models\PredikatNilai::removeDuplicates(); // Heal legacy duplicate predicates
 
                 // 4. Prepare Summary for View
                 $summary = [];

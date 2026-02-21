@@ -53,20 +53,10 @@ class WaliKelasController extends Controller
                     ->first();
             }
 
-            // If still no class (admin has no assigned class and didn't select one), pick first from Active Year
+            // If still no class (admin has no assigned class and didn't select one), DO NOT pick first from Active Year.
+            // Returning null allows the Admin Grid view to show.
             if (!$kelas) {
-                // Filter by Jenjang too if requested?
-                $q = Kelas::where('id_tahun_ajaran', $activeYear->id)
-                    ->whereHas('jenjang', function($q) {
-                        $q->where('has_rapor', true);
-                    })
-                    ->with(['jenjang', 'anggota_kelas.siswa', 'wali_kelas']);
-
-                if (request('jenjang')) {
-                    $q->whereHas('jenjang', fn($j) => $j->where('kode', request('jenjang')));
-                }
-
-                $kelas = $q->first();
+                $kelas = null;
             }
         }
 
@@ -115,38 +105,7 @@ class WaliKelasController extends Controller
             })
             ->with(['jenjang', 'anggota_kelas.siswa']);
 
-        if (!$user->isAdmin()) {
-            // ... (rest of logic same)
-
-    // In inputAbsensi
-        // Admin Filter Data (Copy from inputCatatan)
-    $allClasses = collect([]);
-    if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
-        $activeYear = TahunAjaran::where('status', 'aktif')->first();
-        $query = Kelas::where('id_tahun_ajaran', $activeYear->id)
-            ->whereHas('jenjang', function($q) {
-                $q->where('has_rapor', true);
-            });
-        if (request('jenjang')) {
-            $query->whereHas('jenjang', fn($q) => $q->where('kode', request('jenjang')));
-        }
-        $allClasses = $query->orderBy('nama_kelas')->get();
-    }
-
-    // In inputCatatan
-        // Admin Filter Data
-        $allClasses = collect([]);
-        if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
-            $activeYear = TahunAjaran::where('status', 'aktif')->first();
-            $query = Kelas::where('id_tahun_ajaran', $activeYear->id)
-                ->whereHas('jenjang', function($q) {
-                    $q->where('has_rapor', true);
-                });
-            if (request('jenjang')) {
-                $query->whereHas('jenjang', fn($q) => $q->where('kode', request('jenjang')));
-            }
-            $allClasses = $query->orderBy('nama_kelas')->get();
-        }
+        if (!$user->isAdmin() && !$user->isTu()) {
             $query->where('id_wali_kelas', $user->id);
         }
 
@@ -165,7 +124,7 @@ class WaliKelasController extends Controller
         if ($kelasId) {
             $kelas = $allClasses->where('id', $kelasId)->first();
         }
-        if (!$kelas) {
+        if (!$kelas && !$user->isAdmin() && !$user->isTu()) {
             $kelas = $allClasses->first();
         }
 
@@ -339,7 +298,19 @@ class WaliKelasController extends Controller
     public function inputAbsensi()
     {
         list($kelas, $periode, $activeYear) = $this->getWaliKelasInfo();
-        if (!$kelas || !$periode) return back()->with('error', 'Akes ditolak atau periode belum aktif.');
+        if (!$kelas) {
+            if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
+                $allClasses = Kelas::where('id_tahun_ajaran', $activeYear->id)
+                    ->whereHas('jenjang', fn($q) => $q->where('has_rapor', true))
+                    ->orderBy('tingkat_kelas', 'asc')
+                    ->orderBy('nama_kelas', 'asc')
+                    ->get();
+                $allPeriods = collect([]);
+                return view('wali-kelas.absensi', compact('kelas', 'allClasses', 'allPeriods', 'activeYear'));
+            }
+            return back()->with('error', 'Akses ditolak atau kelas tidak ditemukan.');
+        }
+        if (!$periode) return back()->with('error', 'Akes ditolak atau periode belum aktif.');
 
         // Eager load CatatanKehadiran (relation name inferred: catatan_kehadiran)
         // Since we didn't define relation in Siswa, we limit eager loading or define it now?
@@ -368,8 +339,8 @@ class WaliKelasController extends Controller
 
     // Fetch All Periods for Filter (Filtered by Jenjang)
     $periodsQuery = Periode::where('id_tahun_ajaran', $activeYear->id);
-    if (request('jenjang')) {
-        $periodsQuery->where('lingkup_jenjang', request('jenjang'));
+    if ($kelas && $kelas->jenjang) {
+        $periodsQuery->where('lingkup_jenjang', $kelas->jenjang->kode);
     }
     $allPeriods = $periodsQuery->orderBy('nama_periode')->get();
 
@@ -544,7 +515,19 @@ class WaliKelasController extends Controller
     public function inputCatatan()
     {
         list($kelas, $periode) = $this->getWaliKelasInfo();
-        if (!$kelas || !$periode) return back()->with('error', 'Akses ditolak.');
+        if (!$kelas) {
+            if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
+                $activeYear = TahunAjaran::where('status', 'aktif')->first();
+                $allClasses = Kelas::where('id_tahun_ajaran', $activeYear->id)
+                    ->whereHas('jenjang', fn($q) => $q->where('has_rapor', true))
+                    ->orderBy('tingkat_kelas', 'asc')
+                    ->orderBy('nama_kelas', 'asc')
+                    ->get();
+                return view('wali-kelas.catatan', compact('kelas', 'allClasses'));
+            }
+            return back()->with('error', 'Akses ditolak atau kelas tidak ditemukan.');
+        }
+        if (!$periode) return back()->with('error', 'Akses ditolak atau periode belum aktif.');
 
         $students = $kelas->anggota_kelas()->with('siswa')->get();
 
@@ -672,7 +655,20 @@ class WaliKelasController extends Controller
     public function inputEkskul()
     {
         list($kelas, $periode) = $this->getWaliKelasInfo();
-        if (!$kelas || !$periode) return back()->with('error', 'Akses ditolak.');
+        if (!$kelas) {
+            if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
+                $activeYear = TahunAjaran::where('status', 'aktif')->first();
+                $allClasses = Kelas::where('id_tahun_ajaran', $activeYear->id)
+                    ->whereHas('jenjang', fn($q) => $q->where('has_rapor', true))
+                    ->orderBy('tingkat_kelas', 'asc')
+                    ->orderBy('nama_kelas', 'asc')
+                    ->get();
+                $ekskulOptions = ['Pramuka', 'PMR', 'Futsal', 'Hadrah', 'Qiroah', 'Drum Band'];
+                return view('wali-kelas.ekskul', compact('kelas', 'allClasses', 'ekskulOptions'));
+            }
+            return back()->with('error', 'Akses ditolak.');
+        }
+        if (!$periode) return back()->with('error', 'Akses ditolak atau periode belum aktif.');
 
         $students = $kelas->anggota_kelas()->with('siswa')->get();
 
@@ -735,7 +731,18 @@ class WaliKelasController extends Controller
     public function leger()
     {
         list($kelas, $periode, $activeYear) = $this->getWaliKelasInfo();
-        if (!$kelas || !$periode) return back()->with('error', 'Akses ditolak.');
+        if (!$kelas) {
+            if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
+                $allClasses = Kelas::where('id_tahun_ajaran', $activeYear->id)
+                    ->whereHas('jenjang', fn($q) => $q->where('has_rapor', true))
+                    ->orderBy('tingkat_kelas', 'asc')
+                    ->orderBy('nama_kelas', 'asc')
+                    ->get();
+                return view('wali-kelas.leger', compact('kelas', 'allClasses', 'activeYear'));
+            }
+            return back()->with('error', 'Akses ditolak.');
+        }
+        if (!$periode) return back()->with('error', 'Akses ditolak atau periode belum aktif.');
 
         $students = $kelas->anggota_kelas()->with('siswa')->get();
         // Fetch grades logic similar to monitoring but specific to Ledger grid
@@ -780,7 +787,19 @@ class WaliKelasController extends Controller
     public function monitoring()
     {
         list($kelas, $periode, $activeYear) = $this->getWaliKelasInfo();
-        if (!$kelas || !$periode) return back()->with('error', 'Akses ditolak atau periode belum aktif.');
+        if (!$kelas) {
+            if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
+                $allClasses = Kelas::where('id_tahun_ajaran', $activeYear->id)
+                    ->whereHas('jenjang', fn($q) => $q->where('has_rapor', true))
+                    ->orderBy('tingkat_kelas', 'asc')
+                    ->orderBy('nama_kelas', 'asc')
+                    ->get();
+                $allPeriods = collect([]);
+                return view('wali-kelas.monitoring', compact('kelas', 'allClasses', 'activeYear', 'allPeriods'));
+            }
+            return back()->with('error', 'Akses ditolak.');
+        }
+        if (!$periode) return back()->with('error', 'Akses ditolak atau periode belum aktif.');
 
         // 1. Get all subjects for this jenjang (Specific OR 'Semua')
         // 1. Get Mapels (Only those assigned/plotted for this class)
@@ -951,8 +970,13 @@ class WaliKelasController extends Controller
             if (request()->has('kelas_id')) {
                 $kelas = Kelas::find(request('kelas_id'));
             } elseif (!$kelas) {
-                // Default to first class if Admin has no class assigned
-                $kelas = Kelas::where('id_tahun_ajaran', $activeYear->id)->orderBy('nama_kelas')->first();
+                // Return Grid View directly for Admins if no class is chosen
+                $allClassesQuery = Kelas::where('id_tahun_ajaran', $activeYear->id)->orderBy('nama_kelas');
+                if (request('jenjang')) $allClassesQuery->whereHas('jenjang', fn($q) => $q->where('kode', request('jenjang')));
+                $allClasses = $allClassesQuery->get();
+                $years = TahunAjaran::orderBy('nama', 'desc')->get();
+                $jenjangs = \App\Models\Jenjang::all();
+                return view('wali-kelas.kenaikan-kelas', compact('kelas', 'allClasses', 'activeYear', 'years', 'jenjangs'));
             }
         }
 

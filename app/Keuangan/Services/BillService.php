@@ -182,35 +182,87 @@ class BillService
     {
         // 1. Duplicate One-Time Bills
         $duplicatesOneTime = \Illuminate\Support\Facades\DB::select("
-            SELECT siswa_id, jenis_biaya_id, COUNT(*) as count
+            SELECT tagihans.siswa_id, tagihans.jenis_biaya_id, COUNT(*) as count
             FROM tagihans
             JOIN jenis_biayas ON tagihans.jenis_biaya_id = jenis_biayas.id
             WHERE jenis_biayas.tipe = 'sekali'
-            GROUP BY siswa_id, jenis_biaya_id
+            GROUP BY tagihans.siswa_id, tagihans.jenis_biaya_id
             HAVING count > 1
         ");
 
         foreach ($duplicatesOneTime as $dup) {
-            // Keep the first (oldest), delete others
             $bills = Tagihan::where('siswa_id', $dup->siswa_id)
                 ->where('jenis_biaya_id', $dup->jenis_biaya_id)
+                ->orderBy('terbayar', 'desc') // Prioritize the one with payment
                 ->orderBy('created_at', 'asc')
-                ->get(); // get all
+                ->get();
 
-            // Skip first
-            $bills->shift();
+            if ($bills->count() > 1) {
+                $keptBill = $bills->shift();
 
-            foreach ($bills as $bill) {
-                if ($bill->terbayar == 0) {
-                     $bill->delete();
+                foreach ($bills as $bill) {
+                    if ($bill->terbayar > 0) {
+                        $transaksis = \App\Keuangan\Models\Transaksi::where('tagihan_id', $bill->id)->get();
+                        foreach ($transaksis as $trx) {
+                            $duplicateTrx = \App\Keuangan\Models\Transaksi::where('tagihan_id', $keptBill->id)
+                                ->where('jumlah_bayar', $trx->jumlah_bayar)
+                                ->where('metode_pembayaran', $trx->metode_pembayaran)
+                                ->first();
+                            if ($duplicateTrx) {
+                                $trx->delete();
+                            } else {
+                                $trx->update(['tagihan_id' => $keptBill->id]);
+                            }
+                        }
+                        self::updateStatus($keptBill);
+                    }
+                    $bill->delete();
                 }
             }
         }
 
         // 2. Duplicate Monthly Bills (Same Month/Year)
-        // This is harder in raw SQL without helper functions for month/year on created_at
-        // So we iterate active students and check.
-        // Or we use DB raw.
+        $duplicatesMonthly = \Illuminate\Support\Facades\DB::select("
+            SELECT tagihans.siswa_id, tagihans.jenis_biaya_id, YEAR(tagihans.created_at) as year, MONTH(tagihans.created_at) as month, COUNT(*) as count
+            FROM tagihans
+            JOIN jenis_biayas ON tagihans.jenis_biaya_id = jenis_biayas.id
+            WHERE jenis_biayas.tipe = 'bulanan'
+            GROUP BY tagihans.siswa_id, tagihans.jenis_biaya_id, YEAR(tagihans.created_at), MONTH(tagihans.created_at)
+            HAVING count > 1
+        ");
+
+        foreach ($duplicatesMonthly as $dup) {
+            $bills = Tagihan::where('siswa_id', $dup->siswa_id)
+                ->where('jenis_biaya_id', $dup->jenis_biaya_id)
+                ->whereYear('created_at', $dup->year)
+                ->whereMonth('created_at', $dup->month)
+                ->orderBy('terbayar', 'desc') // Prioritize the one with payment
+                ->orderBy('created_at', 'asc')
+                ->get();
+
+            if ($bills->count() > 1) {
+                $keptBill = $bills->shift();
+
+                foreach ($bills as $bill) {
+                    if ($bill->terbayar > 0) {
+                        $transaksis = \App\Keuangan\Models\Transaksi::where('tagihan_id', $bill->id)->get();
+                        foreach ($transaksis as $trx) {
+                            $duplicateTrx = \App\Keuangan\Models\Transaksi::where('tagihan_id', $keptBill->id)
+                                ->where('jumlah_bayar', $trx->jumlah_bayar)
+                                ->where('metode_pembayaran', $trx->metode_pembayaran)
+                                ->first();
+                            if ($duplicateTrx) {
+                                $trx->delete();
+                            } else {
+                                $trx->update(['tagihan_id' => $keptBill->id]);
+                            }
+                        }
+                        self::updateStatus($keptBill);
+                    }
+                    $bill->delete();
+                }
+            }
+        }
     }
     /**
      * Update Tagihan Status based on Payment Amount (Self-Healing)

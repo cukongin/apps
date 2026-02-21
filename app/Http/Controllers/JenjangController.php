@@ -199,19 +199,19 @@ class JenjangController extends Controller
 
         // 2. Update Predicates
         if ($request->has('predikat') && is_array($request->predikat)) {
-            PredikatNilai::where('id_tahun_ajaran', $activeYear->id)
-                ->where('jenjang', $jk)
-                ->delete();
-
             foreach ($request->predikat as $grade => $data) {
-                PredikatNilai::create([
-                    'id_tahun_ajaran' => $activeYear->id,
-                    'jenjang' => $jk,
-                    'grade' => $grade,
-                    'min_score' => $data['min'] ?? 0,
-                    'max_score' => $data['max'] ?? 0,
-                    'deskripsi' => $data['deskripsi'] ?? ''
-                ]);
+                PredikatNilai::updateOrCreate(
+                    [
+                        'id_tahun_ajaran' => $activeYear->id,
+                        'jenjang' => $jk,
+                        'grade' => $grade,
+                    ],
+                    [
+                        'min_score' => $data['min'] ?? 0,
+                        'max_score' => $data['max'] ?? 0,
+                        'deskripsi' => $data['deskripsi'] ?? ''
+                    ]
+                );
             }
         }
 
