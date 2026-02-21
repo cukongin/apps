@@ -758,30 +758,59 @@ class WaliKelasController extends Controller
 
         $grades = NilaiSiswa::where('id_kelas', $kelas->id)
             ->where('id_periode', $periode->id)
-            ->get()
-            ->keyBy(fn($item) => $item->id_siswa . '-' . $item->id_mapel); // Compound key for easy lookup
+            ->get();
+
+        $gradesByKey = $grades->keyBy(fn($item) => $item->id_siswa . '-' . $item->id_mapel);
 
         // Fetch KKM (Per Year and Jenjang)
         $kkm = \App\Models\KkmMapel::where('id_tahun_ajaran', $activeYear->id)
              ->where('jenjang_target', $kelas->jenjang->kode)
              ->pluck('nilai_kkm', 'id_mapel');
 
+        // Calculate Student Ranks
+        $studentTotals = [];
+        foreach($students as $ak) {
+            $total = 0;
+            foreach($assignedMapelIds as $mId) {
+                $g = $gradesByKey->get($ak->id_siswa . '-' . $mId);
+                if ($g) $total += $g->nilai_akhir;
+            }
+            $studentTotals[$ak->id_siswa] = $total;
+        }
 
+        arsort($studentTotals);
+        $ranks = [];
+        $currentRank = 1;
+        $actualIndex = 1;
+        $prevTotal = null;
+
+        foreach($studentTotals as $idSiswa => $total) {
+            // Standard competition ranking (1, 2, 2, 4...)
+            if ($prevTotal !== null && $total < $prevTotal) {
+                $currentRank = $actualIndex;
+            }
+            $ranks[$idSiswa] = $currentRank;
+            $prevTotal = $total;
+            $actualIndex++;
+        }
 
         // Admin Filter Data
-    $allClasses = collect([]);
-    if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
-        $query = Kelas::where('id_tahun_ajaran', $activeYear->id)
-            ->whereHas('jenjang', function($q) {
-                $q->where('has_rapor', true);
-            });
-        if (request('jenjang')) {
-            $query->whereHas('jenjang', fn($q) => $q->where('kode', request('jenjang')));
+        $allClasses = collect([]);
+        if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
+            $query = Kelas::where('id_tahun_ajaran', $activeYear->id)
+                ->whereHas('jenjang', function($q) {
+                    $q->where('has_rapor', true);
+                });
+            if (request('jenjang')) {
+                $query->whereHas('jenjang', fn($q) => $q->where('kode', request('jenjang')));
+            }
+            $allClasses = $query->orderBy('nama_kelas')->get();
         }
-        $allClasses = $query->orderBy('nama_kelas')->get();
-    }
 
-    return view('wali-kelas.leger', compact('kelas', 'periode', 'students', 'mapels', 'grades', 'kkm', 'allClasses'));
+        // Reassign grades to gradesByKey so the view doesn't break
+        $grades = $gradesByKey;
+
+        return view('wali-kelas.leger', compact('kelas', 'periode', 'students', 'mapels', 'grades', 'kkm', 'allClasses', 'ranks'));
     }
 
     public function monitoring()

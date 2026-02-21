@@ -149,7 +149,7 @@
                         </td>
                         <td class="px-4 py-3 text-center bg-amber-50/10">
                              <div class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-100 text-amber-700 font-black text-xs shadow-sm">
-                                {{ $index + 1 }}
+                                {{ $ranks[$ak->id_siswa] ?? '-' }}
                             </div>
                         </td>
                     </tr>
@@ -182,7 +182,7 @@
                      <!-- Rank Badge -->
                      <div class="w-12 h-12 flex-shrink-0 bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 rounded-xl flex flex-col items-center justify-center font-black shadow-inner border border-amber-300">
                         <span class="text-[8px] uppercase tracking-wider opacity-70">Rank</span>
-                        <span class="text-xl leading-none">#{{ $index + 1 }}</span>
+                        <span class="text-xl leading-none">#{{ $ranks[$ak->id_siswa] ?? '-' }}</span>
                      </div>
                      <div class="flex-1 min-w-0">
                         <h4 class="font-bold text-slate-900 dark:text-white line-clamp-1 text-lg">{{ $ak->siswa->nama_lengkap }}</h4>
