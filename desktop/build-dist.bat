@@ -52,6 +52,10 @@ echo [3/3] Memajang Source Code Website (dataweb)...
 :: Kami TETAP menyalin .git agar Klien bisa Update via tombol Sync Web UI
 "%ROBOCOPY_CMD%" "%SOURCE_DIR%" "%DEST_DIR%\dataweb" /E /XD node_modules tests bin desktop /MT:8 /NDL /NFL /NJH /NJS
 
+echo [INFO] Memperbaiki tautan gambar (Storage Symlink)...
+rmdir /s /q "%DEST_DIR%\dataweb\public\storage" >nul 2>&1
+"%DEST_DIR%\php\php.exe" "%DEST_DIR%\dataweb\artisan" storage:link >nul 2>&1
+
 :: Mengamankan file penting ke root bundle
 if exist "%SOURCE_DIR%\bin\cloudflared.exe" (
     echo [INFO] Menyertakan Cloudflare Tunnel...
