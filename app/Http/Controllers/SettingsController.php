@@ -1414,9 +1414,9 @@ class SettingsController extends Controller
         }
         file_put_contents($envFile, $content);
 
-        // SYNC .env automatically
+        // SYNC .env automatically ONLY IF IN BUNDLED DESKTOP ENVIRONMENT
         $mainEnvPath = base_path('.env');
-        if (file_exists($mainEnvPath)) {
+        if (file_exists($mainEnvPath) && is_dir(base_path('bin/mysql'))) {
             $mainEnv = file_get_contents($mainEnvPath);
             $mainEnv = preg_replace('/^DB_PORT=.*$/m', 'DB_PORT=' . $request->desktop_db_port, $mainEnv);
             // Also update APP_URL port if localhost
