@@ -1412,8 +1412,26 @@ class SettingsController extends Controller
                 $content .= "\n{$key}={$value}";
             }
         }
-
         file_put_contents($envFile, $content);
+
+        // SYNC .env automatically
+        $mainEnvPath = base_path('.env');
+        if (file_exists($mainEnvPath)) {
+            $mainEnv = file_get_contents($mainEnvPath);
+            $mainEnv = preg_replace('/^DB_PORT=.*$/m', 'DB_PORT=' . $request->desktop_db_port, $mainEnv);
+            // Also update APP_URL port if localhost
+            $mainEnv = preg_replace('/^APP_URL=old.*/m', 'APP_URL=http://localhost:' . $request->desktop_web_port, $mainEnv); // Simplify the regex to exactly match the port replacement if it was localhost
+
+            // safer approach for APP_URL:
+            if (preg_match('/^APP_URL=http:\/\/localhost:\d+/m', $mainEnv)) {
+               $mainEnv = preg_replace('/^APP_URL=http:\/\/localhost:\d+/m', 'APP_URL=http://localhost:' . $request->desktop_web_port, $mainEnv);
+            } else if (preg_match('/^APP_URL=http:\/\/localhost(?!\:)/m', $mainEnv)) {
+               $mainEnv = preg_replace('/^APP_URL=http:\/\/localhost.*/m', 'APP_URL=http://localhost:' . $request->desktop_web_port, $mainEnv);
+            }
+
+            file_put_contents($mainEnvPath, $mainEnv);
+            \Illuminate\Support\Facades\Artisan::call('config:clear');
+        }
 
         return back()->with('success', 'Konfigurasi Desktop & Hybrid Tunnel berhasil disimpan ke .env.desktop! Restart aplikasi Desktop untuk menerapkan perubahan.');
     }
