@@ -5,7 +5,7 @@
 #define MyAppVersion "1.0"
 #define MyAppPublisher "Siapps Team"
 #define MyAppURL "http://localhost:8899"
-#define MyAppExeName "start-app.bat"
+#define MyAppExeName "Siapps.vbs"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application. Do not use the same AppId value in installers for other applications.
@@ -29,28 +29,22 @@ WizardStyle=modern
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
-Name: "indonesian"; MessagesFile: "compiler:Languages\Indonesian.isl"
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-; IMPORTANT: Adjust Source paths if your folder structure is different
-; We assume you are building from OUTSIDE the project folder, pointing TO the project folder.
-; Example: Source: "D:\XAMPP\htdocs\siapps\*"; DestDir: "{app}"; Flags: ignoreversion
-
-; COPY ALL FILES
-Source: "*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-; NOTE: You might want to exclude .git, node_modules, tests, etc. manually or via [Source] exclusions if Inno Setup supports patterns widely,
-; but usually it's cleaner to have a 'dist' folder to compile from.
+; KITA MENGAMBIL EXCLUSIVE DARI FOLDER DIST (Dataweb, PHP, Database)
+Source: "dist\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\desktop\{#MyAppExeName}"; IconFilename: "{app}\public\favicon.ico"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\desktop\{#MyAppExeName}"; IconFilename: "{app}\public\favicon.ico"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\dataweb\public\favicon.ico"
+Name: "{autoprograms}\Stop {#MyAppName}"; Filename: "{app}\Stop Siapps.vbs"; IconFilename: "{app}\dataweb\public\favicon.ico"
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\dataweb\public\favicon.ico"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\desktop\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: shellexec postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: shellexec postinstall skipifsilent
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{app}\bin\mysql\data"
-Type: filesandordirs; Name: "{app}\storage\logs"
+Type: filesandordirs; Name: "{app}\database\data"
+Type: filesandordirs; Name: "{app}\dataweb\storage\logs"
