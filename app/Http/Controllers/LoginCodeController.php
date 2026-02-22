@@ -42,8 +42,15 @@ class LoginCodeController extends Controller
         $csvUrl = "https://docs.google.com/spreadsheets/d/{$sheetId}/export?format=csv";
 
         try {
-            // Set timeout 5 seconds
-            $ctx = stream_context_create(['http' => ['timeout' => 5]]);
+            // Set timeout 5 seconds and explicitly disable SSL peer verification
+            // This resolves portable standalone build conflicts where php.ini CA stores contain invalid system paths
+            $ctx = stream_context_create([
+                'http' => ['timeout' => 5],
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                ]
+            ]);
             $csvData = @file_get_contents($csvUrl, false, $ctx);
 
             if ($csvData === false) {
