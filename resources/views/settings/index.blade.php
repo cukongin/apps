@@ -136,7 +136,7 @@
                                 <div class="flex items-start gap-4">
                                     <div class="w-24 h-24 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center overflow-hidden relative shadow-sm">
                                         @if(\App\Models\GlobalSetting::val('app_logo'))
-                                            <img src="{{ asset('public/' . \App\Models\GlobalSetting::val('app_logo')) }}" class="w-full h-full object-contain p-2">
+                                            <img src="{{ asset(\App\Models\GlobalSetting::val('app_logo')) }}" class="w-full h-full object-contain p-2">
                                         @else
                                             <span class="material-symbols-outlined text-3xl text-slate-300">image</span>
                                         @endif

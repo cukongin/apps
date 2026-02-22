@@ -305,7 +305,7 @@
             <div class="flex items-center justify-between px-6 py-6 border-b border-slate-100 dark:border-slate-800/50">
                 <div class="flex items-center gap-3">
                     @if(\App\Models\GlobalSetting::val('app_logo'))
-                         <img src="{{ asset('public/' . \App\Models\GlobalSetting::val('app_logo')) }}" class="h-10 w-auto object-contain">
+                         <img src="{{ asset(\App\Models\GlobalSetting::val('app_logo')) }}" class="h-10 w-auto object-contain">
                     @else
                         <div class="bg-primary/10 rounded-xl p-2">
                             <span class="material-symbols-outlined text-primary text-3xl">mosque</span>

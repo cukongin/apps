@@ -45,7 +45,7 @@
              <div class="flex-shrink-0 relative self-center md:self-start">
                 <div class="w-40 h-52 bg-slate-100 dark:bg-slate-800 rounded-2xl overflow-hidden border-4 border-white dark:border-slate-700 shadow-lg flex items-center justify-center relative">
                     @if($student->foto)
-                        <img src="{{ asset('public/' . $student->foto) }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
+                        <img src="{{ asset($student->foto) }}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110">
                     @else
                         <img src="https://ui-avatars.com/api/?name={{ urlencode($student->nama_lengkap) }}&background=003e29&color=fff&size=200&bold=true" class="w-full h-full object-cover">
                     @endif

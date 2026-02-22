@@ -19,7 +19,7 @@
 
         <div class="size-24 rounded-2xl bg-gradient-to-br from-primary to-emerald-600 flex items-center justify-center text-white text-4xl font-bold overflow-hidden shadow-lg shadow-primary/30 ring-4 ring-white dark:ring-surface-dark z-10">
             @if($teacher->data_guru->foto)
-                <img src="{{ asset('public/' . $teacher->data_guru->foto) }}" class="w-full h-full object-cover">
+                <img src="{{ asset($teacher->data_guru->foto) }}" class="w-full h-full object-cover">
             @else
                 {{ substr($teacher->name, 0, 1) }}
             @endif

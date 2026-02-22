@@ -125,7 +125,7 @@
             <div class="flex items-center gap-3 mt-4 pointer-events-none relative z-10">
                 @if($class->wali_kelas)
                     @if($class->wali_kelas->data_guru && $class->wali_kelas->data_guru->foto)
-                        <img src="{{ asset('public/' . $class->wali_kelas->data_guru->foto) }}" class="size-10 rounded-full object-cover ring-2 ring-white dark:ring-surface-dark shadow-sm">
+                        <img src="{{ asset($class->wali_kelas->data_guru->foto) }}" class="size-10 rounded-full object-cover ring-2 ring-white dark:ring-surface-dark shadow-sm">
                     @else
                         <div class="size-10 rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white font-bold ring-2 ring-white dark:ring-surface-dark shadow-sm text-sm">
                             {{ substr($class->wali_kelas->name, 0, 1) }}
