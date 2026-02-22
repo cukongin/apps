@@ -38,7 +38,7 @@ start /b "SiappsDatabase" "%MYSQL_BIN%" --defaults-file="%APP_DIR%\bin\mysql\bin
 :: 4. Start Laravel Server
 echo [INFO] Starting Application on Port !WEB_PORT!...
 cd "%APP_DIR%"
-start /b "SiappsServer" "%PHP_BIN%" artisan serve --port=!WEB_PORT! --host=127.0.0.1
+start /b "SiappsServer" "%PHP_BIN%" artisan serve --port=!WEB_PORT! --host=127.0.0.1 --env=desktop
 
 :: 5. Start Hybrid Cloudflare Tunnel (If Enabled)
 if "!TUNNEL_ENABLED!"=="1" (
