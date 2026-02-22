@@ -43,8 +43,9 @@ echo [2/3] Memajang Mesin Database (database)...
 "%ATTRIB_CMD%" -R "%DEST_DIR%\database\*.*" /S /D
 
 echo [3/3] Memajang Source Code Website (dataweb)...
-:: Clone seluruh codebase KECUALI folder-folder developer (.git, node_modules, tests, bin, desktop)
-"%ROBOCOPY_CMD%" "%SOURCE_DIR%" "%DEST_DIR%\dataweb" /E /XD .git node_modules tests bin desktop /MT:8 /NDL /NFL /NJH /NJS
+:: Clone seluruh codebase KECUALI folder-folder eksternal (node_modules, tests, bin, desktop)
+:: Kami TETAP menyalin .git agar Klien bisa Update via tombol Sync Web UI
+"%ROBOCOPY_CMD%" "%SOURCE_DIR%" "%DEST_DIR%\dataweb" /E /XD node_modules tests bin desktop /MT:8 /NDL /NFL /NJH /NJS
 
 :: Mengamankan file penting ke root bundle
 if exist "%SOURCE_DIR%\bin\cloudflared.exe" (
