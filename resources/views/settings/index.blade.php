@@ -216,6 +216,59 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- HYBRID NETWORK & DESKTOP SETTINGS -->
+                <div class="card-boss relative !p-6 md:!p-8">
+                    <h3 class="font-bold text-lg text-slate-800 dark:text-white mb-6 flex items-center gap-2 pb-4 border-b border-slate-100 dark:border-slate-700">
+                        <span class="material-symbols-outlined text-indigo-500">hub</span> Integrasi Desktop & Hybrid Network
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-6">
+                        Pengaturan ini memodifikasi file <code class="bg-slate-100 px-1 rounded">.env.desktop</code> yang menjadi nyawa aplikasi kasir/admin Desktop Anda. Aktifkan fitur <b>Tunnel</b> agar server lokal sekolah bisa diakses Publik.
+                    </p>
+                    <form action="{{ route('settings.desktop.update') }}" method="POST">
+                        @csrf
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-6">
+                            <div class="space-y-4">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase">Desktop Port (Web App)</label>
+                                <input type="number" name="desktop_web_port" value="{{ env('DESKTOP_WEB_PORT', 8899) }}" class="input-boss w-full font-mono text-lg" placeholder="8899" required min="1024" max="65535">
+                                <p class="text-[10px] text-slate-400">Port lokal web (Contoh: localhost:8899). Jangan tabrakan dengan aplikasi lain.</p>
+                            </div>
+                            <div class="space-y-4">
+                                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 uppercase">Desktop Port (Database)</label>
+                                <input type="number" name="desktop_db_port" value="{{ env('DESKTOP_DB_PORT', 3309) }}" class="input-boss w-full font-mono text-lg" placeholder="3309" required min="1024" max="65535">
+                                <p class="text-[10px] text-slate-400">Port lokal MySQL. Hindari pakai 3306 jika ada XAMPP yang sudah berjalan.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-2xl border border-indigo-100 dark:border-indigo-800 space-y-5">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h4 class="font-bold text-sm text-indigo-900 dark:text-indigo-300 flex items-center gap-2">
+                                        <span class="material-symbols-outlined">cloud</span> Cloudflare Hybrid Tunnel
+                                    </h4>
+                                    <p class="text-xs text-indigo-700 dark:text-indigo-400 mt-1">Nyalakan opsi ini bila Desktop ingin diakses online.</p>
+                                </div>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="desktop_tunnel_enabled" value="0">
+                                    <input type="checkbox" name="desktop_tunnel_enabled" value="1" class="sr-only peer" {{ env('DESKTOP_TUNNEL_ENABLED', 0) ? 'checked' : '' }}>
+                                    <div class="w-11 h-6 bg-indigo-200 peer-focus:outline-none rounded-full peer dark:bg-indigo-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                </label>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-indigo-800 dark:text-indigo-300 mb-2 uppercase">Tunnel Token rahasia (Dari Cloudflare Dashboard)</label>
+                                <input type="password" name="desktop_tunnel_token" value="{{ env('DESKTOP_TUNNEL_TOKEN', '') }}" class="input-boss w-full font-mono text-xs" placeholder="eyJhIjoiYmMyY... paste token panjang di sini">
+                                <p class="text-[10px] text-indigo-600 dark:text-indigo-400 mt-2">Dapatkan token dengan membuat Tunnel baru di Cloudflare Zero Trust Panel.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end pt-6 mt-6 border-t border-slate-100 dark:border-slate-800">
+                            <button type="submit" class="btn-boss bg-indigo-600 hover:bg-indigo-700 text-white flex items-center gap-2 shadow-lg shadow-indigo-600/30">
+                                <span class="material-symbols-outlined">save</span> Simpan Perubahan Network
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <!-- Right: Shortcuts -->

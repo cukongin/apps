@@ -1376,6 +1376,48 @@ class SettingsController extends Controller
         return back()->with('success', 'Identitas Sekolah & Aplikasi berhasil diperbarui (Disinkronkan ke Database Rapor).');
     }
 
+    // --- Desktop Integration (Hybrid Tunnel) ---
+    public function updateDesktopConfig(Request $request)
+    {
+        $request->validate([
+            'desktop_web_port' => 'required|numeric|min:1024|max:65535',
+            'desktop_db_port' => 'required|numeric|min:1024|max:65535',
+            'desktop_tunnel_enabled' => 'required|boolean',
+            'desktop_tunnel_token' => 'nullable|string',
+        ]);
+
+        $envFile = base_path('.env.desktop');
+
+        // If file doesn't exist, create it from standard .env or empty
+        if (!file_exists($envFile)) {
+            $content = "APP_NAME=SiappsDesktop\nAPP_ENV=local\nAPP_DEBUG=true\nAPP_URL=http://localhost:8899\n\nDB_CONNECTION=mysql\nDB_HOST=127.0.0.1\nDB_PORT=3309\nDB_DATABASE=siapps_db\nDB_USERNAME=root\nDB_PASSWORD=\n\n";
+            file_put_contents($envFile, $content);
+        }
+
+        $content = file_get_contents($envFile);
+
+        $configs = [
+            'DESKTOP_WEB_PORT' => $request->desktop_web_port,
+            'DESKTOP_DB_PORT' => $request->desktop_db_port,
+            'DESKTOP_TUNNEL_ENABLED' => $request->desktop_tunnel_enabled ? '1' : '0',
+            'DESKTOP_TUNNEL_TOKEN' => $request->desktop_tunnel_token ?: '""',
+        ];
+
+        foreach ($configs as $key => $value) {
+            // Check if key exists
+            if (preg_match("/^{$key}=.*/m", $content)) {
+                $content = preg_replace("/^{$key}=.*/m", "{$key}={$value}", $content);
+            } else {
+                // Append if not exists
+                $content .= "\n{$key}={$value}";
+            }
+        }
+
+        file_put_contents($envFile, $content);
+
+        return back()->with('success', 'Konfigurasi Desktop & Hybrid Tunnel berhasil disimpan ke .env.desktop! Restart aplikasi Desktop untuk menerapkan perubahan.');
+    }
+
     // --- WhatsApp Settings (Migrated from Finance) ---
 
     public function whatsapp()
