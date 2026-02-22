@@ -36,7 +36,14 @@ class SyncController extends Controller
                     'kelas' => Kelas::all(),
                     'mapel' => Mapel::all(),
                     'siswa' => Siswa::with('kelas')->get(), // Eager load current class
-                    // Add other master data as needed
+                    // Relations and App Configs
+                    'pengajar_mapel' => DB::table('pengajar_mapel')->get(),
+                    'mapel_plotting' => DB::table('mapel_plotting')->get(),
+                    'anggota_kelas' => DB::table('anggota_kelas')->get(),
+                    'identitas_sekolah' => DB::table('identitas_sekolah')->get(),
+                    'levels' => DB::table('levels')->get(),
+                    'menu_roles' => DB::table('menu_roles')->get(),
+                    'kkm_mapel' => DB::table('kkm_mapel')->get(),
                 ],
                 'timestamp' => now(),
             ]);
@@ -96,6 +103,26 @@ class SyncController extends Controller
              }
              $ekskul = $ekskulQuery->get();
 
+             // 5. Academic Support Tables (No period scope needed usually, but we fetch all)
+             $bobotPenilaian = DB::table('bobot_penilaian')->get();
+             $predikatNilai = DB::table('predikat_nilai')->get();
+
+             // 6. Ujian Mapel (Scheduled Exams)
+             $ujianMapelQuery = DB::table('ujian_mapel');
+             if ($semesterId) $ujianMapelQuery->where('id_periode', $semesterId);
+             elseif ($tahunId) {
+                 $periodIds = DB::table('periode')->where('id_tahun_ajaran', $tahunId)->pluck('id');
+                 $ujianMapelQuery->whereIn('id_periode', $periodIds);
+             }
+             $ujianMapel = $ujianMapelQuery->get();
+
+             // 7. Riwayat Absensi (Detailed Daily Attendance)
+             $riwayatAbsensi = DB::table('riwayat_absensi'); // Filtered by date ideally, but sending all for now or filtering by year if possible. 'riwayat_absensi' doesn't easily map to id_periode without join.
+             if ($tahunId) {
+                 // Assuming 'tanggal' is within the academic year. For simplicity, if Year is requested, send all.
+             }
+             $riwayat = $riwayatAbsensi->get();
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -103,6 +130,10 @@ class SyncController extends Controller
                     'absensi' => $absensi,
                     'catatan' => $catatan,
                     'nilai_ekskul' => $ekskul,
+                    'bobot_penilaian' => $bobotPenilaian,
+                    'predikat_nilai' => $predikatNilai,
+                    'ujian_mapel' => $ujianMapel,
+                    'riwayat_absensi' => $riwayat,
                 ],
                 'timestamp' => now(),
             ]);
@@ -151,6 +182,11 @@ class SyncController extends Controller
             $pengeluaranLain = DB::table('pengeluarans')->get();
             $tabungan = DB::table('tabungans')->get();
 
+            // Discount & Expense Details
+            $aturanDiskons = DB::table('aturan_diskons')->get();
+            $kategoriKeringanans = DB::table('kategori_keringanans')->get();
+            $pengeluaranDetails = DB::table('pengeluaran_details')->get();
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -162,6 +198,9 @@ class SyncController extends Controller
                     'pemasukan_lain' => $pemasukanLain,
                     'pengeluaran_lain' => $pengeluaranLain,
                     'tabungan' => $tabungan,
+                    'aturan_diskons' => $aturanDiskons,
+                    'kategori_keringanans' => $kategoriKeringanans,
+                    'pengeluaran_details' => $pengeluaranDetails,
                 ],
                 'timestamp' => now(),
             ]);
@@ -181,31 +220,70 @@ class SyncController extends Controller
 
             DB::beginTransaction();
 
-            // UPSERT STRATEGY (Use ID as key)
-            // Note: If Online has ID 100 and Offline has ID 100 but different content, Offline wins here.
+            // SAFE UPSERT STRATEGY (Check updated_at)
+            $stats = [];
+            $tablesToProcess = [
+                'siswa' => 'siswa',
+                'tagihan' => 'tagihans',
+                'transaksi' => 'transaksis',
+                'pemasukan_lain' => 'pemasukans',
+                'pengeluaran_lain' => 'pengeluarans',
+                'tabungan' => 'tabungans',
+                'pengeluaran_details' => 'pengeluaran_details' // Added
+            ];
 
-            if (isset($data['siswa'])) {
-                foreach ($data['siswa'] as $item) DB::table('siswa')->updateOrInsert(['id' => $item['id']], (array)$item);
-            }
+            foreach ($tablesToProcess as $dataKey => $tableName) {
+                if (isset($data[$dataKey])) {
+                    $stats[$tableName] = ['inserted' => 0, 'updated' => 0, 'skipped' => 0, 'conflicts' => 0];
+                    foreach ($data[$dataKey] as $clientRow) {
+                        $clientRow = (array)$clientRow;
+                        if (!isset($clientRow['id'])) continue;
 
-            if (isset($data['tagihan'])) {
-                foreach ($data['tagihan'] as $item) DB::table('tagihans')->updateOrInsert(['id' => $item['id']], (array)$item);
-            }
+                        $id = $clientRow['id'];
+                        $serverRow = DB::table($tableName)->where('id', $id)->first();
 
-            if (isset($data['transaksi'])) {
-                foreach ($data['transaksi'] as $item) DB::table('transaksis')->updateOrInsert(['id' => $item['id']], (array)$item);
-            }
+                        if (!$serverRow) {
+                            // Insert New
+                            try {
+                                DB::table($tableName)->insert($clientRow);
+                                $stats[$tableName]['inserted']++;
+                            } catch (\Illuminate\Database\QueryException $e) {
+                                if ($e->getCode() === '23000') {
+                                    $stats[$tableName]['conflicts']++;
+                                    \Illuminate\Support\Facades\Log::warning("Sync Conflict (Insert) in $tableName: " . $e->getMessage());
+                                    continue;
+                                }
+                                throw $e;
+                            }
+                        } else {
+                            // Update existing ONLY IF client is newer
+                            $serverRowArray = (array)$serverRow;
+                            $clientTime = isset($clientRow['updated_at']) ? strtotime($clientRow['updated_at']) : 0;
+                            $serverTime = isset($serverRowArray['updated_at']) ? strtotime($serverRowArray['updated_at']) : 0;
 
-            if (isset($data['pemasukan_lain'])) {
-                foreach ($data['pemasukan_lain'] as $item) DB::table('pemasukans')->updateOrInsert(['id' => $item['id']], (array)$item);
-            }
+                            if ($clientTime > $serverTime) {
+                                // FIX: Preserve Server Photo if Client sends null/empty (Prevent Deletion) for siswa table
+                                if ($tableName === 'siswa' && empty($clientRow['foto']) && !empty($serverRowArray['foto'])) {
+                                    unset($clientRow['foto']);
+                                }
 
-            if (isset($data['pengeluaran_lain'])) {
-                foreach ($data['pengeluaran_lain'] as $item) DB::table('pengeluarans')->updateOrInsert(['id' => $item['id']], (array)$item);
-            }
-
-            if (isset($data['tabungan'])) {
-                foreach ($data['tabungan'] as $item) DB::table('tabungans')->updateOrInsert(['id' => $item['id']], (array)$item);
+                                try {
+                                    DB::table($tableName)->where('id', $id)->update($clientRow);
+                                    $stats[$tableName]['updated']++;
+                                } catch (\Illuminate\Database\QueryException $e) {
+                                    if ($e->getCode() === '23000') {
+                                         $stats[$tableName]['conflicts']++;
+                                         \Illuminate\Support\Facades\Log::warning("Sync Conflict (Update) in $tableName: " . $e->getMessage());
+                                         continue;
+                                    }
+                                    throw $e;
+                                }
+                            } else {
+                                $stats[$tableName]['skipped']++;
+                            }
+                        }
+                    }
+                }
             }
 
             DB::commit();
@@ -214,7 +292,11 @@ class SyncController extends Controller
             \App\Keuangan\Services\BillService::removeDuplicates();
             \App\Models\PredikatNilai::removeDuplicates(); // Heal legacy duplicate predicates
 
-            return response()->json(['success' => true, 'message' => 'Data received and synchronized.']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Data received and synchronized securely.',
+                'stats' => $stats
+            ]);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -245,6 +327,8 @@ class SyncController extends Controller
             'telescope_entries',
             'telescope_entries_tags',
             'telescope_monitoring',
+            'audit_logs', // Prevent massive history payload
+            'notifications', // Exclude notifications from sync
         ];
 
         // Filter tables
