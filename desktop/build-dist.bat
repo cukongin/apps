@@ -42,6 +42,11 @@ echo [2/3] Memajang Mesin Database (database)...
 :: Membersihkan attribute Read-Only pada database agar tidak crash
 "%ATTRIB_CMD%" -R "%DEST_DIR%\database\*.*" /S /D
 
+echo [SSL] Memperbaiki Sertifikat HTTPS untuk Mesin PHP dan MySQL...
+powershell -Command "(gc '%DEST_DIR%\database\bin\my.ini' -Encoding UTF8) -replace 'D:/XAMPP/mysql', '' | Out-File '%DEST_DIR%\database\bin\my.ini' -Encoding UTF8"
+copy "%SOURCE_DIR%\..\apache\bin\curl-ca-bundle.crt" "%DEST_DIR%\php\curl-ca-bundle.crt" >nul
+powershell -Command "(gc '%DEST_DIR%\php\php.ini' -Encoding UTF8) -replace 'D:\\XAMPP\\apache\\bin\\curl-ca-bundle.crt', 'curl-ca-bundle.crt' | Out-File '%DEST_DIR%\php\php.ini' -Encoding UTF8"
+
 echo [3/3] Memajang Source Code Website (dataweb)...
 :: Clone seluruh codebase KECUALI folder-folder eksternal (node_modules, tests, bin, desktop)
 :: Kami TETAP menyalin .git agar Klien bisa Update via tombol Sync Web UI
