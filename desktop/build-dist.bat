@@ -1,5 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
+set "PATH=%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%SystemRoot%\System32\WindowsPowerShell\v1.0\;%PATH%"
 title Siapps Standalone Builder
 
 echo ===================================================
@@ -19,6 +20,10 @@ set "ATTRIB_CMD=%SystemRoot%\System32\attrib.exe"
 :: Pastikan membersihkan folder dist lama jika ada
 if exist "%DEST_DIR%" (
     echo [INFO] Menghapus build lama...
+    echo [INFO] Menghentikan semua layanan aktif untuk mencegah korupsi data...
+    taskkill /NOLOGO /F /IM cloudflared.exe >nul 2>&1
+    taskkill /NOLOGO /F /IM php.exe >nul 2>&1
+    taskkill /NOLOGO /F /IM mysqld.exe >nul 2>&1
     rmdir /s /q "%DEST_DIR%"
 )
 
