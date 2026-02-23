@@ -53,9 +53,13 @@ copy "D:\XAMPP\apache\bin\curl-ca-bundle.crt" "%DEST_DIR%\php\curl-ca-bundle.crt
 powershell -Command "(gc '%DEST_DIR%\php\php.ini' -Encoding UTF8) -replace 'D:\\XAMPP\\apache\\bin\\curl-ca-bundle.crt', 'curl-ca-bundle.crt' | Out-File '%DEST_DIR%\php\php.ini' -Encoding UTF8"
 
 echo [3/3] Memajang Source Code Website (dataweb)...
-:: Clone seluruh codebase KECUALI folder-folder eksternal (node_modules, tests, bin, desktop)
-:: Kami TETAP menyalin .git agar Klien bisa Update via tombol Sync Web UI
-"%ROBOCOPY_CMD%" "%SOURCE_DIR%" "%DEST_DIR%\dataweb" /E /XD node_modules tests bin desktop /MT:8 /NDL /NFL /NJH /NJS
+:: Clone seluruh codebase KECUALI folder-folder eksternal (node_modules, tests, bin, desktop, .git)
+:: Kami TIDAK LAGI menyalin .git karena menggunakan fitur Portable Auto-Updater (Delta Download)
+"%ROBOCOPY_CMD%" "%SOURCE_DIR%" "%DEST_DIR%\dataweb" /E /XD node_modules tests bin desktop .git /MT:8 /NDL /NFL /NJH /NJS
+
+echo [INFO] Menginjeksi Tracker Versi (Git SHA)...
+git rev-parse HEAD > "%DEST_DIR%\dataweb\storage\app\version.txt" 2>nul
+if errorlevel 1 echo [WARNING] Gagal membuat version.txt. Fitur Auto-Update Delta butuh Full-Sync dulu.
 
 echo [INFO] Memperbaiki tautan gambar (Storage Symlink)...
 rmdir /s /q "%DEST_DIR%\dataweb\public\storage" >nul 2>&1

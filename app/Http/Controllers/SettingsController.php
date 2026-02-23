@@ -1257,61 +1257,122 @@ class SettingsController extends Controller
         set_time_limit(0);
 
         try {
-            $log .= "Memulai proses Update Sistem (Mode ZIP)...\n";
+            $log .= "Memulai proses Update Sistem (Mode Delta/File-by-File)...\n";
+            $owner = 'cukongin';
+            $repo = 'apps';
+            $branch = 'main';
+            $versionFile = storage_path('app/version.txt');
 
-            // 1. Download ZIP (Portable Update without Git)
-            $zipUrl = 'https://github.com/cukongin/apps/archive/refs/heads/main.zip';
-            $updateDir = storage_path('app/updates');
-            $zipPath = $updateDir . '/main.zip';
-            $extractPath = $updateDir . '/extract';
+            // 1. Get Latest Commit from Github
+            $latestResponse = \Illuminate\Support\Facades\Http::timeout(30)->withOptions(['verify' => false, 'headers' => ['User-Agent' => 'SiApps-Updater']])
+                ->get("https://api.github.com/repos/{$owner}/{$repo}/commits/{$branch}");
 
-            if (!\Illuminate\Support\Facades\File::exists($updateDir)) {
-                \Illuminate\Support\Facades\File::makeDirectory($updateDir, 0755, true);
+            if (!$latestResponse->successful()) {
+                throw new \Exception("Gagal menghubungi Github API. HTTP: " . $latestResponse->status());
             }
 
-            // Clean up previous extraction just in case
-            if (\Illuminate\Support\Facades\File::exists($extractPath)) {
-                \Illuminate\Support\Facades\File::deleteDirectory($extractPath);
+            $latestSha = $latestResponse->json()['sha'];
+            $currentSha = \Illuminate\Support\Facades\File::exists($versionFile) ? trim(\Illuminate\Support\Facades\File::get($versionFile)) : null;
+
+            if ($currentSha === $latestSha) {
+                $log .= "Sistem sudah berada di versi terbaru (" . substr($latestSha, 0, 7) . ").\n";
+                return back()->with('success', "Update Selesai - Tidak ada perubahan.\nLog:\n" . $log);
             }
 
-            $log .= "Mengunduh berkas update dari Github...\n";
-            $response = \Illuminate\Support\Facades\Http::timeout(300)->withOptions([
-                'verify' => false,
-            ])->get($zipUrl);
+            if (!$currentSha) {
+                // FALLBACK: Full ZIP Download for first time/missing version.txt
+                $log .= "File version.txt tidak ditemukan (Instalasi awal). Memulai unduhan penuh (Full Update)...\n";
 
-            if (!$response->successful()) {
-                throw new \Exception("Gagal mengunduh berkas update jaringan. HTTP Status: " . $response->status());
-            }
+                $zipUrl = "https://github.com/{$owner}/{$repo}/archive/refs/heads/{$branch}.zip";
+                $updateDir = storage_path('app/updates');
+                $zipPath = $updateDir . '/main.zip';
+                $extractPath = $updateDir . '/extract';
 
-            \Illuminate\Support\Facades\File::put($zipPath, $response->body());
-            $log .= "Unduhan Selesai (" . round(\Illuminate\Support\Facades\File::size($zipPath) / 1024 / 1024, 2) . " MB).\n";
+                if (!\Illuminate\Support\Facades\File::exists($updateDir)) \Illuminate\Support\Facades\File::makeDirectory($updateDir, 0755, true);
+                if (\Illuminate\Support\Facades\File::exists($extractPath)) \Illuminate\Support\Facades\File::deleteDirectory($extractPath);
 
-            // 2. Extract ZIP
-            $log .= "Mengekstrak berkas ZIP...\n";
-            $zip = new \ZipArchive;
-            if ($zip->open($zipPath) === true) {
-                $zip->extractTo($extractPath);
-                $zip->close();
-                $log .= "Ekstraksi berhasil.\n";
+                $response = \Illuminate\Support\Facades\Http::timeout(600)->withOptions(['verify' => false])->get($zipUrl);
+                if (!$response->successful()) throw new \Exception("Gagal mengunduh ZIP sistem utama.");
+
+                \Illuminate\Support\Facades\File::put($zipPath, $response->body());
+                $log .= "Unduhan Selesai (" . round(\Illuminate\Support\Facades\File::size($zipPath) / 1024 / 1024, 2) . " MB).\n";
+
+                $zip = new \ZipArchive;
+                if ($zip->open($zipPath) === true) {
+                    $zip->extractTo($extractPath);
+                    $zip->close();
+                } else {
+                    throw new \Exception("Gagal mengekstrak berkas ZIP update.");
+                }
+
+                $sourcePath = $extractPath . '/apps-main';
+                if (\Illuminate\Support\Facades\File::exists($sourcePath)) {
+                    \Illuminate\Support\Facades\File::copyDirectory($sourcePath, base_path());
+                    $log .= "[FULL SYNC] Berhasil menyalin seluruh file.\n";
+                } else {
+                    throw new \Exception("Struktur folder ZIP tidak valid.");
+                }
+
+                \Illuminate\Support\Facades\File::deleteDirectory($updateDir);
+
             } else {
-                throw new \Exception("Gagal mengekstrak berkas ZIP update.");
+                // DELTA UPDATE: Download changed files only
+                $log .= "Mendeteksi versi lama: " . substr($currentSha, 0, 7) . "\n";
+                $log .= "Versi terbaru: " . substr($latestSha, 0, 7) . "\n";
+
+                $compareResponse = \Illuminate\Support\Facades\Http::timeout(30)->withOptions(['verify' => false, 'headers' => ['User-Agent' => 'SiApps-Updater']])
+                    ->get("https://api.github.com/repos/{$owner}/{$repo}/compare/{$currentSha}...{$latestSha}");
+
+                if (!$compareResponse->successful()) {
+                    throw new \Exception("Gagal mengambil daftar perubahan dari Github API (Mungkin API Limit 60x/jam tercapai).");
+                }
+
+                $changedFiles = $compareResponse->json()['files'] ?? [];
+
+                if (empty($changedFiles)) {
+                    $log .= "Tidak ada file yang berubah secara struktural.\n";
+                } else {
+                    $log .= "Memulai pengunduhan " . count($changedFiles) . " file yang berubah (Delta Update)...\n";
+
+                    foreach ($changedFiles as $file) {
+                        $filename = $file['filename'];
+                        $status = $file['status'];
+                        $localPath = base_path($filename);
+
+                        // Prevent messing with .env or storage paths directly if they get committed accidentally
+                        if (str_starts_with($filename, 'storage/app/') || $filename === '.env.desktop') {
+                            $log .= "[LEWATI] $filename (Protected)\n";
+                            continue;
+                        }
+
+                        if ($status === 'removed') {
+                            if (\Illuminate\Support\Facades\File::exists($localPath)) {
+                                \Illuminate\Support\Facades\File::delete($localPath);
+                                $log .= "[HAPUS] $filename\n";
+                            }
+                        } else {
+                            // modified, added, renamed
+                            // Use raw.githubusercontent to bypass API rate limits for file contents
+                            $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$latestSha}/" . ltrim($filename, '/');
+                            $fileContent = \Illuminate\Support\Facades\Http::timeout(30)->withOptions(['verify' => false])->get($rawUrl);
+
+                            if ($fileContent->successful()) {
+                                $dir = dirname($localPath);
+                                if (!\Illuminate\Support\Facades\File::exists($dir)) {
+                                    \Illuminate\Support\Facades\File::makeDirectory($dir, 0755, true);
+                                }
+                                \Illuminate\Support\Facades\File::put($localPath, $fileContent->body());
+                                $log .= "[UPDATE] $filename\n";
+                            } else {
+                                $log .= "[GAGAL] Download $filename (HTTP " . $fileContent->status() . ")\n";
+                            }
+                        }
+                    }
+                }
             }
 
-            // 3. Move/Copy files to base_path
-            // ZIP structure from Github is usually "repository-branch", e.g., "apps-main"
-            $sourcePath = $extractPath . '/apps-main';
-            if (\Illuminate\Support\Facades\File::exists($sourcePath)) {
-                $log .= "Menyalin file update ke sistem utama...\n";
-                // copyDirectory merges content silently (replaces existing, preserves untouched)
-                \Illuminate\Support\Facades\File::copyDirectory($sourcePath, base_path());
-                $log .= "Sistem berhasil diperbarui.\n";
-            } else {
-                throw new \Exception("Struktur folder ZIP tidak valid (Missing 'apps-main').");
-            }
-
-            // 4. Clean up temp files
-            \Illuminate\Support\Facades\File::deleteDirectory($updateDir);
-            $log .= "Pembersihan file sementara selesai.\n";
+            // Save the new version SHA locally
+            \Illuminate\Support\Facades\File::put($versionFile, $latestSha);
 
             // 5. Clear Caches (Internal Artisan Call - Safe)
             \Illuminate\Support\Facades\Artisan::call('optimize:clear');
@@ -1340,7 +1401,7 @@ class SettingsController extends Controller
                 $log .= "Sync Seeder Skipped/Error: " . $seedErr->getMessage() . "\n";
             }
 
-            return back()->with('success', "Update Berhasil! Sistem via ZIP Portable.\nLog:\n" . $log);
+            return back()->with('success', "Update Berhasil! Sistem via Delta Auto-Patch.\nLog:\n" . $log);
 
         } catch (\Throwable $e) {
              // Create a detailed error log
