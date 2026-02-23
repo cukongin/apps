@@ -436,16 +436,16 @@
 
             <!-- Summary Rows -->
             <tr class="bg-yellow-50">
-                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Rata-Rapor (RR)</td>
+                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Rata-Rapor</td>
                 @foreach($mapels as $mapel)
                     <td class="px-1 py-1 border border-black text-center font-bold">
                         {{ isset($row['summary']['rr'][$mapel->id]) && $row['summary']['rr'][$mapel->id] != 0 ? number_format($row['summary']['rr'][$mapel->id], 2) : '-' }}
                     </td>
                 @endforeach
-                <td rowspan="2" class="border border-black bg-gray-dark text-white text-center font-bold text-[8px] leading-tight align-middle">RATA-RATA<br>TOTAL</td>
+                <td rowspan="2" class="border border-black bg-gray-dark text-white text-center font-bold text-[8px] leading-tight align-middle">Rata-rata<br>Total</td>
             </tr>
             <tr class="bg-primary/5">
-                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Ujian Mdr (UM)</td>
+                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Ujian Mdr</td>
                 @foreach($mapels as $mapel)
                     <td class="px-1 py-1 border border-black text-center font-bold">
                         {{ isset($row['summary']['um'][$mapel->id]) && $row['summary']['um'][$mapel->id] != 0 ? number_format($row['summary']['um'][$mapel->id]) : '-' }}
@@ -453,7 +453,7 @@
                 @endforeach
             </tr>
             <tr class="bg-secondary/10">
-                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Nilai Akhir (NA)</td>
+                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Nilai Akhir</td>
                 @foreach($mapels as $mapel)
                     <td class="px-1 py-1 border border-black text-center font-bold text-secondary-dark">
                         {{ isset($row['summary']['na'][$mapel->id]) && $row['summary']['na'][$mapel->id] != 0 ? number_format($row['summary']['na'][$mapel->id], 2) : '-' }}
@@ -552,7 +552,7 @@
 
         /* Ensure Table Fonts for Print */
         table {
-            font-size: 8px !important; /* Adjusted to 8px for maximum compactness */
+            font-size: 9px !important; /* Adjusted to 9px per user request */
             font-family: Arial, sans-serif !important;
             line-height: 1; /* Tighter lines */
             border-collapse: collapse !important;
