@@ -1617,7 +1617,7 @@ class WaliKelasController extends Controller
             'periods', // All Periods for Dropdown
             'activePeriod', // Selected Period
             'years', // All Years
-            'jenjangs' => \App\Models\Jenjang::where('kode', '!=', 'TPQ')->get(), // All Jenjangs
+            'jenjangs', // All Jenjangs
                 'activeYear', // Selected Year
                 'gradingSettings' // NEW: For Info Box
             ));
