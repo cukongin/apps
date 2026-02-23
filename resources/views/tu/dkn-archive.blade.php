@@ -435,31 +435,30 @@
 
             <!-- Summary Rows -->
             <tr class="bg-yellow-50">
-                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Nilai RR</td>
+                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Rata-Rapor (RR)</td>
                 @foreach($mapels as $mapel)
                     <td class="px-1 py-1 border border-black text-center font-bold">
                         {{ isset($row['summary']['rr'][$mapel->id]) && $row['summary']['rr'][$mapel->id] != 0 ? number_format($row['summary']['rr'][$mapel->id], 2) : '-' }}
                     </td>
                 @endforeach
-                <td class="border border-black bg-gray-200"></td>
+                <td rowspan="2" class="border border-black bg-gray-dark text-white text-center font-bold text-[8px] leading-tight align-middle">RATA-RATA<br>TOTAL</td>
             </tr>
             <tr class="bg-primary/5">
-                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Nilai UM</td>
+                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Ujian Mdr (UM)</td>
                 @foreach($mapels as $mapel)
                     <td class="px-1 py-1 border border-black text-center font-bold">
                         {{ isset($row['summary']['um'][$mapel->id]) && $row['summary']['um'][$mapel->id] != 0 ? number_format($row['summary']['um'][$mapel->id]) : '-' }}
                     </td>
                 @endforeach
-                <td class="border border-black bg-gray-200"></td>
             </tr>
             <tr class="bg-secondary/10">
-                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Nilai NA</td>
+                <td class="px-2 py-1 border border-black text-left font-bold text-[9px]">Nilai Akhir (NA)</td>
                 @foreach($mapels as $mapel)
                     <td class="px-1 py-1 border border-black text-center font-bold text-secondary-dark">
                         {{ isset($row['summary']['na'][$mapel->id]) && $row['summary']['na'][$mapel->id] != 0 ? number_format($row['summary']['na'][$mapel->id], 2) : '-' }}
                     </td>
                 @endforeach
-                <td class="border border-black bg-gray-200"></td>
+                <td class="border border-black bg-gray-dark text-white text-center font-bold text-[9px]">{{ $naAvg > 0 ? number_format($naAvg, 2) : '-' }}</td>
             </tr>
         </tbody>
         @endforeach
@@ -566,10 +565,11 @@
         }
 
         /* Force background colors */
-        .bg-yellow-50 { background-color: #fefce8 !important; -webkit-print-color-adjust: exact; }
-        .bg-primary\/5 { background-color: #eff6ff !important; -webkit-print-color-adjust: exact; } /* Fallback Light Blue/Gray */
-        .bg-secondary\/10 { background-color: #dcfce7 !important; -webkit-print-color-adjust: exact; } /* Fallback Light Green */
-        .bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
+        .bg-yellow-50 { background-color: #fff3e0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .bg-primary\/5 { background-color: #e0f7fa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } /* Fallback Light Blue/Gray */
+        .bg-secondary\/10 { background-color: #e8f5e9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } /* Fallback Light Green */
+        .bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .bg-gray-dark { background-color: #555555 !important; color: white !important; font-weight: bold !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
 </style>
 @endsection
