@@ -1337,6 +1337,7 @@ class SettingsController extends Controller
                     $log .= "Tidak ada file yang berubah secara struktural.\n";
                 } else {
                     $log .= "Memulai pengunduhan " . count($changedFiles) . " file yang berubah (Delta Update)....\n";
+                    $failCount = 0;
 
                     // Create stream context for native file_get_contents
                     // $streamContext = stream_context_create([
@@ -1398,13 +1399,18 @@ class SettingsController extends Controller
                                 $log .= "[UPDATE] $filename\n";
                             } else {
                                 $log .= "[GAGAL] Download $filename (Native cURL Code: $httpCode)\n";
+                                $failCount++;
                             }
                         }
+                    }
+
+                    if ($failCount > 0) {
+                        throw new \Exception("Gagal mengunduh $failCount file. Sistem membatalkan pembaruan versi (" . substr($latestSha, 0, 7) . ") untuk mencegah kerusakan sistem. Silakan coba lagi nanti.");
                     }
                 }
             }
 
-            // Save the new version SHA locally
+            // Save the new version SHA locally ONLY if no files failed downloading
             \Illuminate\Support\Facades\File::put($versionFile, $latestSha);
 
             // 5. Clear Caches (Internal Artisan Call - Safe)
