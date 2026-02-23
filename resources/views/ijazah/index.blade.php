@@ -395,9 +395,10 @@
             <div x-show="expanded" x-collapse style="display: none;" class="border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4" @click.stop>
                 <div class="flex flex-col gap-3">
                     <div class="grid grid-cols-12 text-[10px] font-bold text-slate-400 uppercase px-1">
-                        <div class="col-span-6">Mata Pelajaran</div>
-                        <div class="col-span-3 text-center text-slate-400">RR</div>
+                        <div class="col-span-5">Mata Pelajaran</div>
+                        <div class="col-span-2 text-center text-slate-400">RR</div>
                         <div class="col-span-3 text-center text-amber-500">UM</div>
+                        <div class="col-span-2 text-center text-emerald-500">NA</div>
                     </div>
                     @foreach($mapels as $mapel)
                     @php
@@ -405,17 +406,23 @@
                         $g = $studentGrades ? $studentGrades->where('id_mapel', $mapel->id)->first() : null;
                         $rr = $g->rata_rata_rapor ?? '';
                         $um = $g->nilai_ujian_madrasah ?? '';
+                        $ijazah = $g->nilai_ijazah ?? '';
                     @endphp
                     <div class="grid grid-cols-12 items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 shadow-sm relative z-0">
-                        <div class="col-span-6 flex flex-col pr-2">
-                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">{{ $mapel->nama_mapel }}</span>
+                        <div class="col-span-5 flex flex-col pr-1">
+                            <span class="text-[11px] font-bold text-slate-700 dark:text-slate-200 leading-tight">{{ $mapel->nama_mapel }}</span>
                         </div>
-                        <div class="col-span-3 text-center">
+                        <div class="col-span-2 text-center">
                             <span class="text-xs font-bold text-slate-500 block py-1.5">{{ $rr ?: '-' }}</span>
                             <input type="hidden" name="grades[{{ $s->id_siswa }}][{{ $mapel->id }}][rata_rata]" value="{{ $rr }}" class="mobile-input">
                         </div>
-                        <div class="col-span-3 text-center relative z-10">
-                            <input type="number" step="1" name="grades[{{ $s->id_siswa }}][{{ $mapel->id }}][ujian]" value="{{ $um !== '' ? number_format((float)$um, 0, '.', '') : '' }}" {{ $disabledAttr }} class="w-[90%] text-center text-xs font-black text-black bg-white border border-slate-300 rounded shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 hover:border-amber-400 focus:outline-none py-1.5 mx-auto block mobile-input pointer-events-auto" placeholder="-">
+                        <div class="col-span-3 text-center relative z-10 px-1">
+                            <input type="number" step="1" name="grades[{{ $s->id_siswa }}][{{ $mapel->id }}][ujian]" value="{{ $um !== '' ? number_format((float)$um, 0, '.', '') : '' }}" {{ $disabledAttr }} class="w-full text-center text-[11px] font-black text-black bg-white border border-slate-300 rounded shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 hover:border-amber-400 focus:outline-none py-1.5 block mobile-input pointer-events-auto" placeholder="-">
+                        </div>
+                        <div class="col-span-2 text-center">
+                            <span class="text-[11px] font-black text-emerald-600 dark:text-emerald-400">
+                                {{ is_numeric($ijazah) ? number_format((float)$ijazah, 2) : '-' }}
+                            </span>
                         </div>
                     </div>
                     @endforeach
