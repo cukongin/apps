@@ -1434,6 +1434,7 @@ class SettingsController extends Controller
                 $log .= "Sync Seeder Skipped/Error: " . $seedErr->getMessage() . "\n";
             }
 
+            \Illuminate\Support\Facades\File::put(storage_path('app/updater_log.txt'), $log);
             return back()->with('success', "Update Berhasil! Sistem via Delta Auto-Patch.\nLog:\n" . $log);
 
         } catch (\Throwable $e) {
@@ -1442,6 +1443,7 @@ class SettingsController extends Controller
              if (method_exists($e, 'getProcess') && $e->getProcess()) {
                  $errorLog .= "\nCommand Output: " . $e->getProcess()->getErrorOutput();
              }
+             \Illuminate\Support\Facades\File::put(storage_path('app/updater_log.txt'), $log . "\n" . $errorLog);
 
              return back()->with('error', "Update Gagal (System Error):\n" . $errorLog);
         }
