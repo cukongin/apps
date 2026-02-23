@@ -223,7 +223,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <button @click="expanded = !expanded" class="w-8 h-8 mt-1 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 transition-transform duration-200 flex-shrink-0 border border-slate-100 dark:border-slate-600 shadow-sm" :class="expanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20' : ''">
+                            <button type="button" @click.stop.prevent="expanded = !expanded" class="w-8 h-8 mt-1 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 transition-transform duration-200 flex-shrink-0 border border-slate-100 dark:border-slate-600 shadow-sm" :class="expanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20' : ''">
                                 <span class="material-symbols-outlined text-lg">expand_more</span>
                             </button>
                         </div>
