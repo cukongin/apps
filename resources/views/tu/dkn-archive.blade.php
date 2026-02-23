@@ -320,16 +320,17 @@
     <table class="w-full text-left text-[10px] border-collapse border border-black">
         <thead class="bg-gray-100 text-black uppercase font-bold text-center">
             <tr>
-                <th class="px-1 py-1 border border-black w-8">NO</th>
-                <th class="px-2 py-1 border border-black w-[100px]">NAMA SISWA</th>
-                <th class="px-2 py-1 border border-black w-[80px]">KELAS / PERIODE</th>
+                <th class="px-1 py-1 border border-black w-6 align-middle">NO</th>
+                <th class="px-2 py-1 border border-black w-[150px] align-middle">NAMA SISWA</th>
+                <th class="px-2 py-1 border border-black w-[90px] align-middle">KELAS / SMT</th>
                 @foreach($mapels as $mapel)
-                <th class="px-1 py-1 border border-black min-w-[40px]">{{ $mapel->nama_mapel }}</th>
+                <th class="px-1 py-2 border border-black align-bottom relative h-[120px]">
+                    <div class="vertical-text">{{ $mapel->nama_mapel }}</div>
+                </th>
                 @endforeach
-                <th class="px-1 py-1 border border-black w-12 bg-gray-200">RATA2</th>
-                <th class="px-1 py-1 border border-black w-16 bg-gray-200">KET.</th>
+                <th class="px-1 py-1 border border-black w-14 bg-gray-200 align-middle">RATA-RATA</th>
+                <th class="px-1 py-1 border border-black w-16 align-middle">KETERANGAN</th>
             </tr>
-        </thead>
         </thead>
         <!-- Loop Students -->
         @php $no = 1; @endphp
@@ -570,6 +571,19 @@
         .bg-secondary\/10 { background-color: #e8f5e9 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } /* Fallback Light Green */
         .bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
         .bg-gray-dark { background-color: #555555 !important; color: white !important; font-weight: bold !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+
+    /* Vertical Text Utility outside @media print so it works on screen if needed,
+       but primarily for print */
+    .vertical-text {
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        text-align: left;
+        max-height: 110px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: auto;
     }
 </style>
 @endsection
