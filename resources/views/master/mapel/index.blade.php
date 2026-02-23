@@ -189,7 +189,8 @@
     <!-- Table -->
     <div class="card-boss overflow-hidden flex flex-col">
         <div class="overflow-x-auto">
-            <table class="w-full text-left">
+            <!-- Desktop Table View -->
+            <table class="w-full text-left hidden md:table">
                 <thead class="table-head">
                     <tr>
                         <th class="px-6 py-4">Kode</th>
@@ -258,6 +259,70 @@
                     @endforelse
                 </tbody>
             </table>
+
+            <!-- Mobile Card View -->
+            <div class="md:hidden flex flex-col p-4 gap-4">
+                @forelse($mapels as $mapel)
+                <div class="card-boss !p-0 overflow-hidden" x-data="{ expanded: false }">
+                    <!-- Card Header -->
+                    <div class="p-4 flex items-start justify-between gap-3" @click="expanded = !expanded">
+                        <div class="flex gap-3 min-w-0">
+                            <div class="w-10 h-10 flex-shrink-0 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-black shadow-sm border border-primary/20">
+                                <span class="material-symbols-outlined text-lg">menu_book</span>
+                            </div>
+                            <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                <h4 class="font-bold text-slate-900 dark:text-white line-clamp-1 text-sm">{{ $mapel->nama_mapel }}</h4>
+                                <div class="text-[10px] text-slate-500 font-mono mt-0.5">{{ $mapel->kode_mapel ?? '-' }}</div>
+                            </div>
+                        </div>
+                        <button class="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 transition-transform duration-200 flex-shrink-0 border border-slate-100 dark:border-slate-600 shadow-sm" :class="expanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20' : ''">
+                            <span class="material-symbols-outlined text-lg">expand_more</span>
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Content & Actions -->
+                    <div x-show="expanded" x-collapse style="display: none;" class="border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
+                        <div class="flex items-center justify-between mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                            <div class="flex flex-col gap-1">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kategori</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-block max-w-max bg-white {{ $mapel->kategori == 'AGAMA' ? 'text-emerald-700 border-emerald-200' : ($mapel->kategori == 'MULOK' ? 'text-amber-700 border-amber-200' : 'text-primary border-primary/20') }}">
+                                    {{ $mapel->kategori }}
+                                </span>
+                            </div>
+                            <div class="flex flex-col gap-1 items-end">
+                                <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Target Jenjang</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border inline-block max-w-max bg-white {{ $mapel->target_jenjang == 'MI' ? 'text-sky-600 border-sky-200' : ($mapel->target_jenjang == 'MTS' ? 'text-indigo-600 border-indigo-200' : 'text-slate-600 border-slate-300') }}">
+                                    {{ $mapel->target_jenjang }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <button @click='openEditModal(@json($mapel))' class="btn-boss bg-amber-500 hover:bg-amber-600 text-white border-none shadow-lg shadow-amber-500/20 py-2.5 flex justify-center items-center gap-2 rounded-xl text-xs">
+                                <span class="material-symbols-outlined text-[16px]">edit_square</span>
+                                <span>Edit Mapel</span>
+                            </button>
+                            <form action="{{ route('master.mapel.destroy', $mapel->id) }}" method="POST"
+                                  data-confirm-delete="true"
+                                  data-title="Hapus Mapel?"
+                                  data-message="Mapel ini akan dihapus permanen."
+                                  class="w-full">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="w-full btn-boss bg-red-100 text-red-700 hover:bg-red-200 border-none shadow-sm py-2.5 flex justify-center items-center gap-2 rounded-xl text-xs">
+                                    <span class="material-symbols-outlined text-[16px]">delete</span>
+                                    <span>Hapus</span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                @empty
+                <div class="text-center py-8 text-slate-500 italic bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    Belum ada mata pelajaran.
+                </div>
+                @endforelse
+            </div>
         </div>
     </div>
 

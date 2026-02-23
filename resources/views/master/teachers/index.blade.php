@@ -232,7 +232,8 @@
     <!-- Table -->
     <div class="card-boss overflow-hidden flex flex-col">
         <div class="overflow-x-auto">
-            <table class="w-full text-left">
+            <!-- Desktop Table View -->
+            <table class="w-full text-left hidden md:table">
                     <thead class="table-head">
                         <tr>
                             <th scope="col" class="px-6 py-4">Nama Guru</th>
@@ -327,6 +328,80 @@
                         @endforelse
                     </tbody>
                 </table>
+
+                <!-- Mobile Card View -->
+                <div class="md:hidden flex flex-col p-4 gap-4">
+                    @forelse($teachers as $teacher)
+                    <div class="card-boss !p-0 overflow-hidden" x-data="{ expanded: false }">
+                        <!-- Card Header -->
+                        <div class="p-4 flex items-start justify-between gap-3" @click="expanded = !expanded">
+                            <div class="flex gap-3 min-w-0 items-center">
+                                <div class="size-11 flex-shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-bold overflow-hidden border border-slate-200 dark:border-slate-700">
+                                    @if($teacher->data_guru && $teacher->data_guru->foto)
+                                        <img src="{{ asset($teacher->data_guru->foto) }}" class="h-full w-full object-cover">
+                                    @else
+                                        <span class="text-lg">{{ substr($teacher->name, 0, 1) }}</span>
+                                    @endif
+                                </div>
+                                <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                    <h4 class="font-bold text-slate-900 dark:text-white line-clamp-1 text-sm">{{ $teacher->name }}</h4>
+                                    <div class="text-[10px] text-slate-500 font-mono mt-0.5">{{ $teacher->data_guru->nik ?? '- No NIK -' }}</div>
+                                </div>
+                            </div>
+                            <button class="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 transition-transform duration-200 flex-shrink-0 border border-slate-100 dark:border-slate-600 shadow-sm" :class="expanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20' : ''">
+                                <span class="material-symbols-outlined text-lg">expand_more</span>
+                            </button>
+                        </div>
+
+                        <!-- Collapsible Output -->
+                        <div x-show="expanded" x-collapse style="display: none;" class="border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
+                            <div class="flex flex-col gap-3 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                                <div class="flex flex-col gap-0.5">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mapel Ajar</span>
+                                    @if($teacher->data_guru && $teacher->data_guru->mapel_ajar_text)
+                                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $teacher->data_guru->mapel_ajar_text }}</span>
+                                    @else
+                                        <span class="text-xs text-slate-400 italic">Belum diisi</span>
+                                    @endif
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="flex flex-col gap-0.5">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">No. HP</span>
+                                        <span class="text-xs font-mono text-slate-600 dark:text-slate-400">{{ $teacher->data_guru->no_hp ?? '-' }}</span>
+                                    </div>
+                                    <div class="flex flex-col gap-0.5 items-end">
+                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</span>
+                                        <span class="px-2.5 py-1 font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-full dark:bg-emerald-900/30 dark:border-emerald-800 dark:text-emerald-400 text-[10px]">AKTIF</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <a href="{{ route('master.teachers.show', $teacher->id) }}" class="btn-boss btn-secondary py-2.5 flex justify-center items-center gap-2 rounded-xl text-xs bg-white dark:bg-slate-800">
+                                    <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                    <span>Detail Guru</span>
+                                </a>
+                                <form action="{{ route('master.teachers.destroy', $teacher->id) }}" method="POST"
+                                      data-confirm-delete="true"
+                                      data-title="Hapus Guru Ini?"
+                                      data-message="Data profil dan akun login guru ini akan dihapus."
+                                      class="w-full">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="w-full btn-boss bg-red-100 text-red-700 hover:bg-red-200 border-none shadow-sm py-2.5 flex justify-center items-center gap-2 rounded-xl text-xs">
+                                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                                        <span>Hapus</span>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="text-center py-8 text-slate-500 italic bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                        Belum ada data guru.
+                    </div>
+                    @endforelse
+                </div>
         </div>
         <div class="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/20">
             {{ $teachers->links('pagination::simple-tailwind') }}

@@ -94,7 +94,8 @@
             @csrf
             @method('DELETE')
             <div class="overflow-x-auto">
-                <table class="w-full text-left">
+                <!-- Desktop Table View -->
+                <table class="w-full text-left hidden md:table">
                     <thead class="table-head">
                         <tr>
                             <th class="py-4 px-6 w-10 text-center">
@@ -189,6 +190,93 @@
                         @endforelse
                     </tbody>
                 </table>
+
+                <!-- Mobile Card View -->
+                <div class="md:hidden flex flex-col p-4 gap-4">
+                    <!-- Bulk Action Helper on Mobile -->
+                    <div class="flex items-center gap-3 px-2 mb-2">
+                        <input class="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer w-5 h-5" type="checkbox" onchange="toggleAll(this)" id="mobileSelectAll"/>
+                        <label for="mobileSelectAll" class="text-xs font-bold text-slate-500">Pilih Semua Halaman Ini</label>
+                    </div>
+
+                    @forelse($students as $student)
+                    <div class="card-boss !p-0 overflow-hidden" x-data="{ expanded: false }">
+                        <!-- Card Header -->
+                        <div class="p-4 flex items-start justify-between gap-3">
+                            <div class="flex flex-center mt-1">
+                                <input class="rounded border-slate-300 text-primary focus:ring-primary cursor-pointer student-checkbox row-checkbox w-5 h-5" type="checkbox" name="ids[]" value="{{ $student->id }}" onchange="toggleRow()"/>
+                            </div>
+                            <div class="flex gap-3 min-w-0 flex-1 items-center" @click="expanded = !expanded">
+                                <div class="size-11 flex-shrink-0 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 font-bold overflow-hidden border border-slate-200 dark:border-slate-700">
+                                    @if($student->foto)
+                                        <img src="{{ asset($student->foto) }}" class="h-full w-full object-cover">
+                                    @else
+                                        <span class="text-lg">{{ substr($student->nama, 0, 1) }}</span>
+                                    @endif
+                                </div>
+                                <div class="flex-1 min-w-0 flex flex-col justify-center">
+                                    <h4 class="font-bold text-slate-900 dark:text-white line-clamp-1 text-sm">{{ $student->nama }}</h4>
+                                    <div class="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono mt-0.5">
+                                        <span>{{ $student->nis }}</span>
+                                        <span class="text-slate-300">•</span>
+                                        <span>{{ $student->nisn ?? '-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button @click="expanded = !expanded" class="w-8 h-8 mt-1 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 transition-transform duration-200 flex-shrink-0 border border-slate-100 dark:border-slate-600 shadow-sm" :class="expanded ? 'rotate-180 bg-primary/10 text-primary border-primary/20' : ''">
+                                <span class="material-symbols-outlined text-lg">expand_more</span>
+                            </button>
+                        </div>
+
+                        <!-- Collapsible Output -->
+                        <div x-show="expanded" x-collapse style="display: none;" class="border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4">
+                            <div class="grid grid-cols-2 gap-4 mb-4 pb-4 border-b border-slate-200 dark:border-slate-700">
+                                <div class="flex flex-col gap-1">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lembaga</span>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ optional($student->jenjang)->kode == 'MI' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100' }} w-fit">
+                                        {{ optional($student->jenjang)->nama ?? '-' }}
+                                    </span>
+                                </div>
+                                <div class="flex flex-col gap-1 items-end">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Kelas</span>
+                                    @if($student->kelas)
+                                        <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ $student->kelas->nama_kelas }}</span>
+                                    @else
+                                        <span class="text-xs italic text-slate-400">- Belum Masuk Kelas -</span>
+                                    @endif
+                                </div>
+                                <div class="flex flex-col gap-1 col-span-2">
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</span>
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold border {{ $student->status == 'AKTIF' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100' }} w-fit">
+                                        {{ $student->status }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-2">
+                                <a href="{{ route('master.students.show', $student->id) }}" class="btn-boss btn-secondary py-2 flex justify-center items-center gap-1.5 rounded-xl text-xs bg-white dark:bg-slate-800">
+                                    <span class="material-symbols-outlined text-[16px]">visibility</span> Detail
+                                </a>
+                                <a href="{{ route('master.students.edit', $student->id) }}" class="btn-boss bg-amber-500 hover:bg-amber-600 text-white border-none shadow-lg shadow-amber-500/20 py-2 flex justify-center items-center gap-1.5 rounded-xl text-xs">
+                                    <span class="material-symbols-outlined text-[16px]">edit_square</span> Edit
+                                </a>
+                                @if(request('tab') == 'inactive' && $student->status_siswa != 'lulus')
+                                <button type="button" onclick="restoreStudent({{ $student->id }})" class="btn-boss bg-emerald-100 hover:bg-emerald-200 text-emerald-700 border-none shadow-sm py-2 flex justify-center items-center gap-1.5 rounded-xl text-xs">
+                                    <span class="material-symbols-outlined text-[16px]">restore_from_trash</span> Restore
+                                </button>
+                                @endif
+                                <button type="button" onclick="openStatusModal({{ $student->id }}, '{{ addslashes($student->nama) }}')" class="btn-boss bg-slate-200 hover:bg-slate-300 text-slate-700 border-none shadow-sm py-2 flex justify-center items-center gap-1.5 rounded-xl text-xs">
+                                    <span class="material-symbols-outlined text-[16px]">input</span> Ubah Status
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="text-center py-8 text-slate-500 italic bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                        Tidak ada data siswa.
+                    </div>
+                    @endforelse
+                </div>
             </div>
 
             <!-- Pagination -->
