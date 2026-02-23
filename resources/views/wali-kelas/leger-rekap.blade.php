@@ -210,9 +210,24 @@
                                     @php
                                         $grade = $studentGradesAll->where('id_periode', $periodeId)->where('id_mapel', $mapel->id)->first();
                                     @endphp
-                                    <div class="flex flex-col items-center min-w-[40px] p-1.5 rounded-lg border {{ $grade ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/50 border-slate-100 text-slate-300' }}">
-                                        <span class="text-[8px] font-bold text-slate-400 uppercase mb-0.5">{{ substr($periodeObj->nama_periode, 0, 3) }}</span>
-                                        <span class="text-xs font-bold {{ $grade ? 'text-slate-700' : 'text-slate-300' }}">{{ $grade ? $grade->nilai_akhir : '-' }}</span>
+                                    <div class="flex flex-col items-center min-w-[50px] px-2 py-1.5 rounded-lg border {{ $grade ? 'bg-slate-50 border-slate-200' : 'bg-slate-50/50 border-slate-100 text-slate-300' }}">
+                                        @php
+                                            $pName = strtolower($periodeObj->nama_periode);
+                                            $shortName = '';
+                                            if (str_contains($pName, 'genap')) {
+                                                $shortName = 'Genap';
+                                            } elseif (str_contains($pName, 'ganjil')) {
+                                                $shortName = 'Ganjil';
+                                            } elseif (str_contains($pName, 'cawu') || str_contains($pName, 'catur')) {
+                                                $num = filter_var($pName, FILTER_SANITIZE_NUMBER_INT) ?: '';
+                                                $shortName = trim('Cawu ' . $num);
+                                            } else {
+                                                $num = filter_var($pName, FILTER_SANITIZE_NUMBER_INT) ?: '';
+                                                $shortName = trim('Smt ' . $num);
+                                            }
+                                        @endphp
+                                        <span class="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-0.5">{{ $shortName }}</span>
+                                        <span class="text-xs font-black {{ $grade ? 'text-slate-700 dark:text-slate-200' : 'text-slate-300' }}">{{ $grade ? $grade->nilai_akhir : '-' }}</span>
                                     </div>
                                  @endforeach
                             </div>
