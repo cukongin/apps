@@ -510,8 +510,8 @@
 
                     <p class="mb-1">{{ $place }}, {{ $dateNow }}</p>
                     <p class="mb-16">{{ $hmTitle }},</p>
-                    <p class="font-bold underline">{{ $hmName }}</p>
-                    <p>NIP. {{ $hmNip }}</p>
+                    <p class="font-bold">{{ $hmName }}</p>
+
                 </td>
             </tr>
         </table>
