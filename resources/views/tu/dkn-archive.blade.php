@@ -467,9 +467,9 @@
 
     <!-- Legend & Signature -->
     <div class="mt-4 text-[10px] break-inside-avoid print:break-inside-avoid">
-        <table class="w-full border-none" style="border: none;">
+        <table class="w-full border-none" style="border: none !important;">
             <tr>
-                <td class="align-top text-left w-[60%]" style="border: none; padding-right: 20px;">
+                <td class="align-top text-left w-[60%]" style="border: none !important; padding-right: 20px;">
                     <div class="mb-4">
                         <strong>Keterangan:</strong><br>
                         1. Rata-Rapor (RR) diambil dari Rata-rata Nilai Rapor semester/kelas yang ditentukan.<br>
@@ -477,7 +477,7 @@
                         3. Kriteria Kelulusan: Rata-rata Nilai Akhir minimal <strong>{{ number_format($minLulus, 2) }}</strong>.
                     </div>
                 </td>
-                <td class="align-bottom text-center w-[40%]" style="border: none;">
+                <td class="align-bottom text-center w-[40%]" style="border: none !important;">
                     @php
                         $hmTitle = 'Kepala Madrasah';
                         if ($jenjang === 'MI') $hmTitle = 'Kepala Madrasah Ibtidaiyah';
