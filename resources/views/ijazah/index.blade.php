@@ -202,13 +202,13 @@
     $disabledAttr = $isLocked ? 'disabled' : '';
 @endphp
 
-<!-- Main Table Card -->
-<div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-[70vh] relative">
+<!-- Form wrapper balances desktop and mobile inputs inside one submission -->
+<form id="dknForm" action="{{ route('ijazah.store') }}" method="POST" class="flex flex-col gap-4 h-full relative">
+    @csrf
+    <input type="hidden" name="kelas_id" value="{{ $kelas->id }}">
 
-    <form id="dknForm" action="{{ route('ijazah.store') }}" method="POST" class="flex flex-col h-full">
-        @csrf
-        <input type="hidden" name="kelas_id" value="{{ $kelas->id }}">
-
+    <!-- Desktop Main Table Card -->
+    <div class="hidden md:flex bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700 overflow-hidden flex-col h-[70vh] relative">
         <div class="flex-1 overflow-auto custom-scrollbar relative">
             <!-- Restored w-full per user request ('separoh' fix), balanced columns -->
             <table class="w-full text-left text-sm border-collapse shadow-sm rounded-lg overflow-hidden">
@@ -273,7 +273,7 @@
                                 <!-- RR Display -->
                                 <td class="px-1 py-1.5 text-center border-r border-slate-200 relative bg-slate-50/30">
                                     <span class="text-[11px] font-bold text-slate-600 block py-1">{{ $rr ?: '-' }}</span>
-                                    <input type="hidden" name="grades[{{ $s->id_siswa }}][{{ $mapel->id }}][rata_rata]" value="{{ $rr }}">
+                                    <input type="hidden" name="grades[{{ $s->id_siswa }}][{{ $mapel->id }}][rata_rata]" value="{{ $rr }}" class="desktop-input">
                                 </td>
 
                                 <!-- UM Input -->
@@ -281,7 +281,7 @@
                                     <input type="number" step="1" name="grades[{{ $s->id_siswa }}][{{ $mapel->id }}][ujian]"
                                         value="{{ $um !== '' ? number_format((float)$um, 0, '.', '') : '' }}"
                                         {{ $disabledAttr }}
-                                        class="w-16 text-center text-xs font-black text-black bg-white border border-slate-400 rounded shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 hover:border-amber-400 focus:outline-none py-1 mx-auto block default-input"
+                                        class="w-16 text-center text-xs font-black text-black bg-white border border-slate-400 rounded shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 hover:border-amber-400 focus:outline-none py-1 mx-auto block desktop-input"
                                         placeholder="-">
                                 </td>
 
@@ -335,8 +335,96 @@
                 </tbody>
             </table>
         </div>
-    </form>
-</div>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden flex flex-col gap-4 pb-10">
+        @foreach($students as $index => $s)
+        @php
+            $sumIjazah = 0; $countMapel = 0;
+            // Calculate Total first for Card Summary
+            foreach($mapels as $mapel) {
+                $studentGrades = $grades->get($s->id_siswa);
+                $g = $studentGrades ? $studentGrades->where('id_mapel', $mapel->id)->first() : null;
+                $ijazah = $g->nilai_ijazah ?? '';
+                if(is_numeric($ijazah) && $ijazah > 0) {
+                    $sumIjazah += $ijazah;
+                    $countMapel++;
+                }
+            }
+            $avg = $countMapel > 0 ? $sumIjazah / $countMapel : 0;
+            $isPass = $avg >= $minLulus;
+        @endphp
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden" x-data="{ expanded: false }">
+            <!-- Header Summary -->
+            <div class="p-4 flex flex-col gap-4 cursor-pointer" @click="expanded = !expanded">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 flex-shrink-0 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-black shadow-inner">
+                        <span class="text-sm">{{ $index + 1 }}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-slate-900 dark:text-white line-clamp-1 text-base">{{ $s->siswa->nama_lengkap }}</h4>
+                        <div class="flex items-center gap-2 text-xs text-slate-500 font-bold mt-1">
+                            <span>{{ $s->siswa->nis_lokal ?? '-' }}</span>
+                            <span class="text-slate-300">&bull;</span>
+                            <span>{{ $s->siswa->jenis_kelamin }}</span>
+                        </div>
+                    </div>
+                    <button type="button" class="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-700 flex items-center justify-center text-slate-400 transition-transform duration-200" :class="expanded ? 'rotate-180 bg-primary/10 text-primary' : ''">
+                        <span class="material-symbols-outlined">expand_more</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-xl p-3 flex justify-between items-center">
+                        <span class="text-[10px] text-indigo-600 dark:text-indigo-300 font-bold uppercase tracking-wider">Rata-Rata</span>
+                        <span class="font-black text-indigo-700 dark:text-indigo-200 text-lg">{{ number_format($avg, 2) }}</span>
+                    </div>
+                    <div class="rounded-xl p-3 flex justify-between items-center border {{ $avg > 0 ? ($isPass ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-800' : 'bg-rose-50 border-rose-100 dark:bg-rose-900/20 dark:border-rose-800') : 'bg-slate-50 border-slate-100 dark:bg-slate-800 dark:border-slate-700' }}">
+                        <span class="text-[10px] font-bold uppercase tracking-wider {{ $avg > 0 ? ($isPass ? 'text-emerald-600 dark:text-emerald-300' : 'text-rose-600 dark:text-rose-300') : 'text-slate-500' }}">Status</span>
+                        @if($avg > 0)
+                            <span class="font-black text-sm {{ $isPass ? 'text-emerald-700 dark:text-emerald-200' : 'text-rose-700 dark:text-rose-200' }}">{{ $isPass ? 'LULUS' : 'BELUM' }}</span>
+                        @else
+                            <span class="font-black text-sm text-slate-400">-</span>
+                        @endif
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inputs inside Accordion -->
+            <div x-show="expanded" x-collapse style="display: none;" class="border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 p-4" @click.stop>
+                <div class="flex flex-col gap-3">
+                    <div class="grid grid-cols-12 text-[10px] font-bold text-slate-400 uppercase px-1">
+                        <div class="col-span-6">Mata Pelajaran</div>
+                        <div class="col-span-3 text-center text-slate-400">RR</div>
+                        <div class="col-span-3 text-center text-amber-500">UM</div>
+                    </div>
+                    @foreach($mapels as $mapel)
+                    @php
+                        $studentGrades = $grades->get($s->id_siswa);
+                        $g = $studentGrades ? $studentGrades->where('id_mapel', $mapel->id)->first() : null;
+                        $rr = $g->rata_rata_rapor ?? '';
+                        $um = $g->nilai_ujian_madrasah ?? '';
+                    @endphp
+                    <div class="grid grid-cols-12 items-center bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2 shadow-sm relative z-0">
+                        <div class="col-span-6 flex flex-col pr-2">
+                            <span class="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight">{{ $mapel->nama_mapel }}</span>
+                        </div>
+                        <div class="col-span-3 text-center">
+                            <span class="text-xs font-bold text-slate-500 block py-1.5">{{ $rr ?: '-' }}</span>
+                            <input type="hidden" name="grades[{{ $s->id_siswa }}][{{ $mapel->id }}][rata_rata]" value="{{ $rr }}" class="mobile-input">
+                        </div>
+                        <div class="col-span-3 text-center relative z-10">
+                            <input type="number" step="1" name="grades[{{ $s->id_siswa }}][{{ $mapel->id }}][ujian]" value="{{ $um !== '' ? number_format((float)$um, 0, '.', '') : '' }}" {{ $disabledAttr }} class="w-[90%] text-center text-xs font-black text-black bg-white border border-slate-300 rounded shadow-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 hover:border-amber-400 focus:outline-none py-1.5 mx-auto block mobile-input pointer-events-auto" placeholder="-">
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+        @endforeach
+    </div>
+</form>
 
 <!-- Import Modal (Preserved) -->
 <div id="importModal" class="hidden fixed inset-0 z-[100] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
@@ -417,6 +505,16 @@
             }
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        function toggleInputs() {
+            const isMobile = window.innerWidth < 768; // md breakpoint
+            document.querySelectorAll('.desktop-input').forEach(el => el.disabled = isMobile);
+            document.querySelectorAll('.mobile-input').forEach(el => el.disabled = !isMobile);
+        }
+        window.addEventListener('resize', toggleInputs);
+        toggleInputs(); // initial run
+    });
 </script>
 @endpush
 
