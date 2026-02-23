@@ -58,9 +58,11 @@
     </div>
 
     @php
-        $bRapor = \App\Models\GlobalSetting::val('ijazah_bobot_rapor', 60);
-        $bUjian = \App\Models\GlobalSetting::val('ijazah_bobot_ujian', 40);
-        $minLulus = \App\Models\GlobalSetting::val('ijazah_min_lulus', 60);
+        $jklRaw = $kelas->getKodeJenjang();
+        $jkl = strtolower($jklRaw);
+        $bRapor = \App\Models\GlobalSetting::val('ijazah_bobot_rapor_' . $jkl, 60);
+        $bUjian = \App\Models\GlobalSetting::val('ijazah_bobot_ujian_' . $jkl, 40);
+        $minLulus = \App\Models\GlobalSetting::val('ijazah_min_lulus_' . $jkl, 60);
     @endphp
 
     <!-- Stats Section Removed (Empty) -->
@@ -469,7 +471,7 @@
             <div class="mb-4 max-w-[60%]">
                 <strong>Keterangan:</strong><br>
                 1. Rata-Rapor (RR) diambil dari Rata-rata Nilai Rapor semester/kelas yang ditentukan.<br>
-                2. Rumus Nilai Akhir: <strong>NA = (Rapor × {{ $bRapor }}%) + (Ujian × {{ $bUjian }}%)</strong>.<br>
+                2. Rumus Nilai Akhir: <strong>NA = (Rapor &times; {{ $bRapor }}%) + (Ujian &times; {{ $bUjian }}%)</strong>.<br>
                 3. Kriteria Kelulusan: Rata-rata Nilai Akhir minimal <strong>{{ number_format($minLulus, 2) }}</strong>.
             </div>
 
