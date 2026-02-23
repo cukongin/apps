@@ -37,7 +37,7 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
         <!-- Left Sidebar (Navigation) -->
-        <div class="lg:col-span-3 sticky top-6">
+        <div class="lg:col-span-3">
             <div class="bg-white dark:bg-surface-dark rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 overflow-hidden">
                 <div class="p-4 bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
                     <h3 class="font-bold text-slate-400 uppercase text-xs tracking-wider">Menu Pengaturan</h3>
