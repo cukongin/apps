@@ -161,7 +161,7 @@
     <div style="margin-top: 10px; font-size: 10px;">
         <strong>Keterangan:</strong><br>
         1. Nilai yang tercantum adalah <strong>Nilai Akhir (NA)</strong>.<br>
-        2. Rumus: <strong>NA = (Rata-rata Rapor Ã— {{ $bRapor }}%) + (Ujian Madrasah (Bulat) Ã— {{ $bUjian }}%)</strong>.<br>
+        2. Rumus: <strong>NA = (Rata-rata Rapor &times; {{ $bRapor }}%) + (Ujian Madrasah (Bulat) &times; {{ $bUjian }}%)</strong>.<br>
         3. Kriteria Kelulusan: Rata-rata Nilai Akhir minimal <strong>{{ number_format($minLulus, 2) }}</strong>.
     </div>
 
