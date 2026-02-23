@@ -212,7 +212,7 @@
         <div class="flex-1 overflow-auto custom-scrollbar relative">
             <!-- Restored w-full per user request ('separoh' fix), balanced columns -->
             <table class="w-full text-left text-sm border-collapse shadow-sm rounded-lg overflow-hidden">
-                <thead class="bg-slate-900 text-white sticky top-0 z-40 shadow-lg border-b border-slate-700">
+                <thead class="bg-slate-900 text-white sticky top-0 z-10 shadow-lg border-b border-slate-700">
                     <tr>
                         <th class="p-3 text-center w-12 border-r border-slate-700 font-bold uppercase text-xs">No</th>
                         <th class="p-3 text-left w-[25%] min-w-[250px] border-r border-slate-700 font-bold uppercase text-xs">Peserta Didik</th>
@@ -249,10 +249,10 @@
                                 @if($mIndex == 0)
                                     <!-- Sticky Identity Cols for First Row of Student -->
                                     <!-- Use align-top to keep name at top -->
-                                    <td rowspan="{{ $rowSpan }}" class="p-3 text-center text-xs font-bold text-slate-500 border-r border-slate-200 bg-white align-top sticky left-0 z-30">
+                                    <td rowspan="{{ $rowSpan }}" class="p-3 text-center text-xs font-bold text-slate-500 border-r border-slate-200 bg-white align-top sticky left-0 z-10">
                                         {{ $index + 1 }}
                                     </td>
-                                    <td rowspan="{{ $rowSpan }}" class="p-3 border-r border-slate-200 bg-white align-top sticky left-12 z-30 shadow-[4px_0_8px_rgba(0,0,0,0.05)] w-[25%] min-w-[250px]">
+                                    <td rowspan="{{ $rowSpan }}" class="p-3 border-r border-slate-200 bg-white align-top sticky left-12 z-10 shadow-[4px_0_8px_rgba(0,0,0,0.05)] w-[25%] min-w-[250px]">
                                         <div class="flex flex-col">
                                             <span class="font-bold text-sm text-slate-800 truncate max-w-[220px]" title="{{ $s->siswa->nama_lengkap }}">
                                                 {{ $s->siswa->nama_lengkap }}
