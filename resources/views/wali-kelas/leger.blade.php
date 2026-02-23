@@ -179,11 +179,9 @@
             <!-- Header Summary (Always Visible) -->
             <div class="p-4 flex flex-col gap-4" @click="expanded = !expanded">
                 <div class="flex items-center gap-4">
-                     <!-- Rank Badge -->
-                     <div class="w-12 h-12 flex-shrink-0 bg-gradient-to-br from-amber-100 to-amber-200 text-amber-700 rounded-xl flex flex-col items-center justify-center font-black shadow-inner border border-amber-300">
-                        <span class="text-[8px] uppercase tracking-wider opacity-70">Rank</span>
-                        <span class="text-xl leading-none">#{{ $ranks[$ak->id_siswa] ?? '-' }}</span>
-                     </div>
+                    <div class="w-12 h-12 flex-shrink-0 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-2xl flex items-center justify-center font-black shadow-sm border border-emerald-100 dark:border-emerald-800">
+                        <span class="text-xl">{{ $index + 1 }}</span>
+                    </div>
                      <div class="flex-1 min-w-0">
                         <h4 class="font-bold text-slate-900 dark:text-white line-clamp-1 text-lg">{{ $ak->siswa->nama_lengkap }}</h4>
                         <div class="flex items-center gap-2 text-xs text-slate-500 font-bold mt-1">

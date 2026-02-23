@@ -359,8 +359,8 @@
             <!-- Header Summary -->
             <div class="p-4 flex flex-col gap-4 cursor-pointer" @click="expanded = !expanded">
                 <div class="flex items-center gap-4">
-                    <div class="w-10 h-10 flex-shrink-0 bg-primary/10 text-primary rounded-xl flex items-center justify-center font-black shadow-inner">
-                        <span class="text-sm">{{ $index + 1 }}</span>
+                    <div class="w-12 h-12 flex-shrink-0 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 rounded-2xl flex items-center justify-center font-black shadow-sm border border-emerald-100 dark:border-emerald-800">
+                        <span class="text-xl">{{ $index + 1 }}</span>
                     </div>
                     <div class="flex-1 min-w-0">
                         <h4 class="font-bold text-slate-900 dark:text-white line-clamp-1 text-base">{{ $s->siswa->nama_lengkap }}</h4>
