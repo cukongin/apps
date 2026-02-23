@@ -242,16 +242,16 @@ class SettingsController extends Controller
 
         // 9. Backups (For Backup Tab)
         $backupPath = 'backups';
-        if (!\Illuminate\Support\Facades\Storage::exists($backupPath)) {
-            \Illuminate\Support\Facades\Storage::makeDirectory($backupPath);
+        if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($backupPath)) {
+            \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory($backupPath);
         }
-        $files = \Illuminate\Support\Facades\Storage::files($backupPath);
+        $files = \Illuminate\Support\Facades\Storage::disk('local')->files($backupPath);
         $backups = [];
         foreach ($files as $file) {
             $backups[] = (object) [
                 'filename' => basename($file),
-                'size' => round(\Illuminate\Support\Facades\Storage::size($file) / 1024, 2) . ' KB',
-                'created_at' => \Carbon\Carbon::createFromTimestamp(\Illuminate\Support\Facades\Storage::lastModified($file)),
+                'size' => round(\Illuminate\Support\Facades\Storage::disk('local')->size($file) / 1024, 2) . ' KB',
+                'created_at' => \Carbon\Carbon::createFromTimestamp(\Illuminate\Support\Facades\Storage::disk('local')->lastModified($file)),
             ];
         }
         // Sort by newest

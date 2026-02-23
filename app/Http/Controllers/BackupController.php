@@ -17,20 +17,20 @@ class BackupController extends Controller
     public function index()
     {
         // Ensure folder exists
-        if (!Storage::exists($this->backupFolder)) {
-            Storage::makeDirectory($this->backupFolder);
+        if (!Storage::disk('local')->exists($this->backupFolder)) {
+            Storage::disk('local')->makeDirectory($this->backupFolder);
         }
 
-        $files = Storage::files($this->backupFolder);
+        $files = Storage::disk('local')->files($this->backupFolder);
         $backups = [];
 
         foreach ($files as $file) {
             $backups[] = [
                 'filename' => basename($file),
                 'path' => $file,
-                'size' => $this->humanFileSize(Storage::size($file)),
-                'created_at' => \Carbon\Carbon::createFromTimestamp(Storage::lastModified($file))->format('d M Y H:i:s'),
-                'timestamp' => Storage::lastModified($file) // for sorting
+                'size' => $this->humanFileSize(Storage::disk('local')->size($file)),
+                'created_at' => \Carbon\Carbon::createFromTimestamp(Storage::disk('local')->lastModified($file))->format('d M Y H:i:s'),
+                'timestamp' => Storage::disk('local')->lastModified($file) // for sorting
             ];
         }
 
@@ -57,8 +57,8 @@ class BackupController extends Controller
             $path = storage_path('app/' . $this->backupFolder . '/' . $filename);
 
             // Ensure folder exists
-            if (!Storage::exists($this->backupFolder)) {
-                Storage::makeDirectory($this->backupFolder);
+            if (!Storage::disk('local')->exists($this->backupFolder)) {
+                Storage::disk('local')->makeDirectory($this->backupFolder);
             }
 
             // Construct command
@@ -109,8 +109,8 @@ class BackupController extends Controller
     public function download($filename)
     {
         $path = $this->backupFolder . '/' . $filename;
-        if (Storage::exists($path)) {
-            return Storage::download($path);
+        if (Storage::disk('local')->exists($path)) {
+            return Storage::disk('local')->download($path);
         }
         return back()->with('error', 'File tidak ditemukan.');
     }
@@ -118,8 +118,8 @@ class BackupController extends Controller
     public function destroy($filename)
     {
         $path = $this->backupFolder . '/' . $filename;
-        if (Storage::exists($path)) {
-            Storage::delete($path);
+        if (Storage::disk('local')->exists($path)) {
+            Storage::disk('local')->delete($path);
             return back()->with('success', 'File backup berhasil dihapus.');
         }
         return back()->with('error', 'File tidak ditemukan.');
