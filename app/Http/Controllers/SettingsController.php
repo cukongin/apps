@@ -1272,7 +1272,11 @@ class SettingsController extends Controller
             }
 
             $latestSha = $latestResponse->json()['sha'];
-            $currentSha = \Illuminate\Support\Facades\File::exists($versionFile) ? trim(\Illuminate\Support\Facades\File::get($versionFile)) : null;
+
+            // Fix: PowerShell on Windows generates UTF-16 version.txt which breaks URLs with NULL bytes.
+            // We use preg_replace to strip everything except valid hex characters (a-f, 0-9).
+            $currentShaRaw = \Illuminate\Support\Facades\File::exists($versionFile) ? \Illuminate\Support\Facades\File::get($versionFile) : null;
+            $currentSha = $currentShaRaw ? preg_replace('/[^a-f0-9]/i', '', $currentShaRaw) : null;
 
             if ($currentSha === $latestSha) {
                 $log .= "Sistem sudah berada di versi terbaru (" . substr($latestSha, 0, 7) . ").\n";
