@@ -1332,7 +1332,19 @@ class SettingsController extends Controller
                 if (empty($changedFiles)) {
                     $log .= "Tidak ada file yang berubah secara struktural.\n";
                 } else {
-                    $log .= "Memulai pengunduhan " . count($changedFiles) . " file yang berubah (Delta Update)...\n";
+                    $log .= "Memulai pengunduhan " . count($changedFiles) . " file yang berubah (Delta Update)....\n";
+
+                    // Create stream context for native file_get_contents
+                    $streamContext = stream_context_create([
+                        'ssl' => [
+                            'verify_peer' => false,
+                            'verify_peer_name' => false,
+                        ],
+                        'http' => [
+                            'method' => 'GET',
+                            'header' => "User-Agent: SiApps\r\n"
+                        ]
+                    ]);
 
                     foreach ($changedFiles as $file) {
                         $filename = $file['filename'];
@@ -1361,17 +1373,18 @@ class SettingsController extends Controller
 
                             $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$latestSha}/" . $safeFilename;
 
-                            $fileContent = \Illuminate\Support\Facades\Http::timeout(30)->withOptions(['verify' => false])->get($rawUrl);
+                            // Native PHP bypasses cURL malformed URL errors entirely
+                            $fileContent = @file_get_contents($rawUrl, false, $streamContext);
 
-                            if ($fileContent->successful()) {
+                            if ($fileContent !== false) {
                                 $dir = dirname($localPath);
                                 if (!\Illuminate\Support\Facades\File::exists($dir)) {
                                     \Illuminate\Support\Facades\File::makeDirectory($dir, 0755, true);
                                 }
-                                \Illuminate\Support\Facades\File::put($localPath, $fileContent->body());
+                                \Illuminate\Support\Facades\File::put($localPath, $fileContent);
                                 $log .= "[UPDATE] $filename\n";
                             } else {
-                                $log .= "[GAGAL] Download $filename (HTTP " . $fileContent->status() . ")\n";
+                                $log .= "[GAGAL] Download $filename (Native Stream Error)\n";
                             }
                         }
                     }
