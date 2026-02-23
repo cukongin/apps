@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Kode Akses - E-Rapor Madrasah</title>
+    <title>Login Kode Akses - {{ config('app.name') }}</title>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -12,6 +12,7 @@
     <script src="//unpkg.com/alpinejs" defer></script>
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        [x-cloak] { display: none !important; }
         .glass-card {
             background: rgba(255, 255, 255, 0.9);
             backdrop-filter: blur(20px);
@@ -84,8 +85,8 @@
                         class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-black py-4 rounded-xl shadow-lg shadow-emerald-500/20 transition-all transform hover:-translate-y-1 active:scale-95 flex items-center justify-center gap-2 group disabled:opacity-70 disabled:cursor-not-allowed"
                         :disabled="isLoading">
                     <span x-show="!isLoading" class="material-symbols-outlined group-hover:animate-bounce">login</span>
-                    <span x-show="isLoading" class="material-symbols-outlined animate-spin">sync</span>
-                    <span x-text="isLoading ? 'MEMVERIFIKASI...' : 'MASUK SEKARANG'"></span>
+                    <span x-show="isLoading" x-cloak class="material-symbols-outlined animate-spin">sync</span>
+                    <span x-text="isLoading ? 'MEMVERIFIKASI...' : 'MASUK SEKARANG'">MASUK SEKARANG</span>
                 </button>
             </form>
 
