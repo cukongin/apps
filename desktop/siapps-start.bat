@@ -1,5 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
+set "PATH=%SystemRoot%\system32;%SystemRoot%;%SystemRoot%\System32\Wbem;%PATH%"
 
 :: ----------------------------------------------------
 :: LAUNCHER MANDIRI (STANDALONE DAPODIK-STYLE)
@@ -63,7 +64,7 @@ if "!TUNNEL_ENABLED!"=="1" (
 :: 6. Buka Browser
 timeout /t 5 /nobreak >nul
 echo [INFO] Membuka Tampilan Aplikasi...
-start chrome --app=http://localhost:!WEB_PORT! 2>nul || start msedge --app=http://localhost:!WEB_PORT! 2>nul || start http://localhost:!WEB_PORT!
+start chrome http://localhost:!WEB_PORT! 2>nul || start msedge http://localhost:!WEB_PORT! 2>nul || start http://localhost:!WEB_PORT!
 
 :: Script berakhir di sini. Background process start /b akan terus jalan.
 exit
