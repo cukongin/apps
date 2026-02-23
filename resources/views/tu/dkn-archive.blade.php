@@ -317,19 +317,19 @@
     </div>
 
     <!-- Print Table (Simple Black Border) -->
-    <table class="w-full text-left text-[10px] border-collapse border border-black">
-        <thead class="bg-gray-100 text-black uppercase font-bold text-center">
+    <table class="w-full text-left font-sans border-collapse border border-black">
+        <thead class="bg-gray-100 text-black font-bold text-center">
             <tr>
-                <th class="px-1 py-1 border border-black w-6 align-middle">NO</th>
-                <th class="px-2 py-1 border border-black w-[150px] align-middle">NAMA SISWA</th>
-                <th class="px-2 py-1 border border-black w-[90px] align-middle">KELAS / SMT</th>
+                <th class="px-1 py-1 border border-black w-6 align-middle uppercase">NO</th>
+                <th class="px-2 py-1 border border-black w-[150px] align-middle uppercase">NAMA SISWA</th>
+                <th class="px-2 py-1 border border-black w-[90px] align-middle uppercase">KELAS / SMT</th>
                 @foreach($mapels as $mapel)
-                <th class="px-1 py-2 border border-black align-bottom relative h-[120px]">
-                    <div class="vertical-text">{{ $mapel->nama_mapel }}</div>
+                <th class="px-1 py-2 border border-black align-bottom relative h-[110px]">
+                    <div class="vertical-text capitalize">{{ strtolower($mapel->nama_mapel) }}</div>
                 </th>
                 @endforeach
-                <th class="px-1 py-1 border border-black w-14 bg-gray-200 align-middle">RATA-RATA</th>
-                <th class="px-1 py-1 border border-black w-16 align-middle">KETERANGAN</th>
+                <th class="px-1 py-1 border border-black w-14 bg-gray-200 align-middle uppercase">RATA-RATA</th>
+                <th class="px-1 py-1 border border-black w-16 align-middle uppercase">KETERANGAN</th>
             </tr>
         </thead>
         <!-- Loop Students -->
@@ -552,7 +552,7 @@
 
         /* Ensure Table Fonts for Print */
         table {
-            font-size: 10px !important; /* Adjusted from 8pt to 10px per user request */
+            font-size: 8px !important; /* Adjusted to 8px for maximum compactness */
             font-family: Arial, sans-serif !important;
             line-height: 1; /* Tighter lines */
             border-collapse: collapse !important;
