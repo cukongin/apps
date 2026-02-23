@@ -41,7 +41,7 @@ class DashboardController extends Controller
         }
 
         // --- 1. General Stats ---
-        $countGuru = User::where('role', 'guru')->count();
+        $countGuru = User::where('role', 'teacher')->count();
         $countKelas = Kelas::where('id_tahun_ajaran', $activeYear->id)->count();
 
         $studentStats = $studentService->getActiveStudentCounts($activeYear->id);
