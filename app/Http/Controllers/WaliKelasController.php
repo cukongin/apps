@@ -1006,7 +1006,7 @@ class WaliKelasController extends Controller
                 if (request('jenjang')) $allClassesQuery->whereHas('jenjang', fn($q) => $q->where('kode', request('jenjang')));
                 $allClasses = $allClassesQuery->get();
                 $years = TahunAjaran::orderBy('nama', 'desc')->get();
-                $jenjangs = \App\Models\Jenjang::all();
+                $jenjangs = \App\Models\Jenjang::where('kode', '!=', 'TPQ')->get();
                 return view('wali-kelas.kenaikan-kelas', compact('kelas', 'allClasses', 'activeYear', 'years', 'jenjangs'));
             }
         }
@@ -1017,7 +1017,7 @@ class WaliKelasController extends Controller
 
         // Dropdown Data
         $years = TahunAjaran::orderBy('nama', 'desc')->get();
-        $jenjangs = \App\Models\Jenjang::all();
+        $jenjangs = \App\Models\Jenjang::where('kode', '!=', 'TPQ')->get();
 
         // Fetch Classes for Dropdown (Filtered by Year & Jenjang)
         $allClassesQuery = Kelas::where('id_tahun_ajaran', $activeYear->id)
@@ -1617,7 +1617,7 @@ class WaliKelasController extends Controller
             'periods', // All Periods for Dropdown
             'activePeriod', // Selected Period
             'years', // All Years
-            'jenjangs', // All Jenjangs
+            'jenjangs' => \App\Models\Jenjang::where('kode', '!=', 'TPQ')->get(), // All Jenjangs
                 'activeYear', // Selected Year
                 'gradingSettings' // NEW: For Info Box
             ));
