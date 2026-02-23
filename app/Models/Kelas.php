@@ -64,4 +64,19 @@ class Kelas extends Model
     {
         return $this->jenjang();
     }
+
+    public function getKodeJenjang()
+    {
+        if ($this->relationLoaded('jenjang') && $this->jenjang) {
+            if (!empty($this->jenjang->kode)) return strtoupper($this->jenjang->kode);
+        } elseif ($this->id_jenjang) {
+            $j = Jenjang::find($this->id_jenjang);
+            if ($j && !empty($j->kode)) return strtoupper($j->kode);
+        }
+
+        if ($this->tingkat_kelas > 6 || stripos($this->nama_kelas, 'mts') !== false || stripos($this->nama_kelas, 'smp') !== false) {
+            return 'MTS';
+        }
+        return 'MI';
+    }
 }

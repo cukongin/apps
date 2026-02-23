@@ -38,8 +38,7 @@
 
     @php
         // Determine Jenjang First
-        $isMts = ($kelas->jenjang->kode ?? '') == 'MTS' || $kelas->tingkat_kelas > 6 || stripos($kelas->nama_kelas, 'mts') !== false;
-        $jenjang = $isMts ? 'MTS' : 'MI';
+        $jenjang = $kelas->getKodeJenjang();
         $jkl = strtolower($jenjang);
 
         $bRapor = \App\Models\GlobalSetting::val('ijazah_bobot_rapor_' . $jkl, 60);
@@ -167,7 +166,7 @@
 
     @php
         // Jenjang Logic (Robust)
-        $jenjang = ($kelas->jenjang->kode ?? '') == 'MTS' || $kelas->tingkat_kelas > 6 ? 'MTS' : 'MI';
+        $jenjang = $kelas->getKodeJenjang();
         $key = strtolower($jenjang);
 
         // Fetch Specific Identity for this Jenjang (MTS vs MI)

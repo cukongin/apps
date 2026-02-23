@@ -27,7 +27,7 @@ class DknReportService
             ->get();
 
         // 3. Identify Mapels (Respect UjianMapel config if exists, else fallback)
-        $jenjang = $kelas->jenjang->kode ?? ($kelas->tingkat_kelas > 6 ? 'MTS' : 'MI');
+        $jenjang = $kelas->getKodeJenjang();
         $activeYearId = $kelas->id_tahun_ajaran;
 
         $selectedMapelIds = UjianMapel::where('id_tahun_ajaran', $activeYearId)

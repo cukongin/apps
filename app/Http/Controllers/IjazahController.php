@@ -91,8 +91,7 @@ class IjazahController extends Controller
         }
 
         // Determine Jenjang
-        $isMts = $kelas->tingkat_kelas > 6 || stripos($kelas->nama_kelas, 'mts') !== false;
-        $jenjang = $isMts ? 'MTS' : 'MI';
+        $jenjang = $kelas->getKodeJenjang();
 
         // Fetch Mapels
         $mapelIds = $this->getMapelIds($jenjang, $kelas->id);
@@ -206,7 +205,7 @@ class IjazahController extends Controller
         $kelas = Kelas::findOrFail($request->kelas_id);
 
         // Determine Jenjang for Weights
-        $jenjang = $kelas->jenjang->kode ?? ($kelas->tingkat_kelas > 6 ? 'MTS' : 'MI');
+        $jenjang = $kelas->getKodeJenjang();
         $jkl = strtolower($jenjang);
 
         $action = $request->input('action', 'draft'); // draft or finalize
@@ -273,7 +272,7 @@ class IjazahController extends Controller
         $kelas = Kelas::findOrFail($kelasId);
 
         // Determine Jenjang
-        $jenjang = $kelas->jenjang->kode ?? ($kelas->tingkat_kelas > 6 ? 'MTS' : 'MI');
+        $jenjang = $kelas->getKodeJenjang();
         $jkl = strtolower($jenjang);
 
         // Fetch Configured Range
@@ -354,8 +353,7 @@ class IjazahController extends Controller
     {
         $kelas = Kelas::with(['jenjang', 'tahun_ajaran', 'wali_kelas'])->findOrFail($kelasId);
         // Filter Mapel Ujian (If Configured)
-        $isMts = $kelas->tingkat_kelas > 6 || stripos($kelas->nama_kelas, 'mts') !== false;
-        $jenjang = $isMts ? 'MTS' : 'MI';
+        $jenjang = $kelas->getKodeJenjang();
 
         $mapelIds = $this->getMapelIds($jenjang, $kelas->id);
 
@@ -391,8 +389,7 @@ class IjazahController extends Controller
 
         // Filter Mapel Ujian (If Configured)
         // FORCE MTS if Grade > 6 OR Name contains "MTS"
-        $isMts = $kelas->tingkat_kelas > 6 || stripos($kelas->nama_kelas, 'mts') !== false;
-        $jenjang = $isMts ? 'MTS' : 'MI';
+        $jenjang = $kelas->getKodeJenjang();
 
         $mapelIds = $this->getMapelIds($jenjang, $kelas->id);
 
@@ -456,7 +453,7 @@ class IjazahController extends Controller
         $kelas = Kelas::findOrFail($kelasId);
 
         // FORCE MTS if Grade > 6
-        $jenjang = ($kelas->tingkat_kelas > 6) ? 'MTS' : 'MI';
+        $jenjang = $kelas->getKodeJenjang();
         $jkl = strtolower($jenjang);
 
         $validMapelIds = $this->getMapelIds($jenjang, $kelasId);
@@ -540,8 +537,7 @@ class IjazahController extends Controller
         // Mapels Logic (Existing)
         // Mapels Logic (Existing)
         // FORCE MTS if Grade > 6 OR Name contains "MTS"
-        $isMts = $kelas->tingkat_kelas > 6 || stripos($kelas->nama_kelas, 'mts') !== false;
-        $jenjang = $isMts ? 'MTS' : 'MI';
+        $jenjang = $kelas->getKodeJenjang();
 
         // Fetch explicit Ujian Mapels if defined, else generic
         $mapelIds = $this->getMapelIds($jenjang, $kelas->id);
