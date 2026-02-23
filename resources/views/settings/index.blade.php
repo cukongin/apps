@@ -38,11 +38,7 @@
             </div>
             @endif
 
-            <!-- Backup Button -->
-            <a href="{{ route('backup.store') }}" class="btn-boss bg-slate-800 text-white hover:bg-slate-900 shadow-slate-900/20">
-                <span class="material-symbols-outlined text-[20px]">cloud_download</span>
-                <span class="hidden sm:inline">Backup DB</span>
-            </a>
+
 
             <button onclick="document.getElementById('yearModal').classList.remove('hidden')" class="btn-boss btn-primary">
                 <span class="material-symbols-outlined text-[20px]">edit_calendar</span>
