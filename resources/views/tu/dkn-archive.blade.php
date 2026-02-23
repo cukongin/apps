@@ -467,51 +467,54 @@
 
     <!-- Legend & Signature -->
     <div class="mt-4 text-[10px] break-inside-avoid print:break-inside-avoid">
-        <div class="flex justify-between items-end">
-            <div class="mb-4 max-w-[60%]">
-                <strong>Keterangan:</strong><br>
-                1. Rata-Rapor (RR) diambil dari Rata-rata Nilai Rapor semester/kelas yang ditentukan.<br>
-                2. Rumus Nilai Akhir: <strong>NA = (Rapor &times; {{ $bRapor }}%) + (Ujian &times; {{ $bUjian }}%)</strong>.<br>
-                3. Kriteria Kelulusan: Rata-rata Nilai Akhir minimal <strong>{{ number_format($minLulus, 2) }}</strong>.
-            </div>
+        <table class="w-full border-none" style="border: none;">
+            <tr>
+                <td class="align-top text-left w-[60%]" style="border: none; padding-right: 20px;">
+                    <div class="mb-4">
+                        <strong>Keterangan:</strong><br>
+                        1. Rata-Rapor (RR) diambil dari Rata-rata Nilai Rapor semester/kelas yang ditentukan.<br>
+                        2. Rumus Nilai Akhir: <strong>NA = (Rapor &times; {{ $bRapor }}%) + (Ujian &times; {{ $bUjian }}%)</strong>.<br>
+                        3. Kriteria Kelulusan: Rata-rata Nilai Akhir minimal <strong>{{ number_format($minLulus, 2) }}</strong>.
+                    </div>
+                </td>
+                <td class="align-bottom text-center w-[40%]" style="border: none;">
+                    @php
+                        $hmTitle = 'Kepala Madrasah';
+                        if ($jenjang === 'MI') $hmTitle = 'Kepala Madrasah Ibtidaiyah';
+                        if ($jenjang === 'MTS') $hmTitle = 'Kepala Madrasah Tsanawiyah';
 
-            <div class="text-center w-[250px] pr-6">
-                @php
-                    $hmTitle = 'Kepala Madrasah';
-                    if ($jenjang === 'MI') $hmTitle = 'Kepala Madrasah Ibtidaiyah';
-                    if ($jenjang === 'MTS') $hmTitle = 'Kepala Madrasah Tsanawiyah';
+                        $key = strtolower($jenjang);
 
-                    $key = strtolower($jenjang);
+                        // Fetch Specific Identity for this Jenjang (MTS vs MI)
+                        $identity = \App\Models\IdentitasSekolah::where('jenjang', $jenjang)->first();
 
-                    // Fetch Specific Identity for this Jenjang (MTS vs MI)
-                    $identity = \App\Models\IdentitasSekolah::where('jenjang', $jenjang)->first();
+                        if (!$identity) {
+                            $identity = $school;
+                        }
 
-                    if (!$identity) {
-                        $identity = $school;
-                    }
+                        $hmName = $identity->kepala_madrasah ?? '......................';
+                        $hmNip = $identity->nip_kepala ?? '-';
 
-                    $hmName = $identity->kepala_madrasah ?? '......................';
-                    $hmNip = $identity->nip_kepala ?? '-';
+                        // Legacy/Fallback Logic
+                        if (empty($hmName) || $hmName == '......................') {
+                             if ($jenjang == 'MTS' && !empty($school->kepala_madrasah_mts)) {
+                                $hmName = $school->kepala_madrasah_mts;
+                                $hmNip = $school->nip_kepala_mts ?? $hmNip;
+                             }
+                        }
 
-                    // Legacy/Fallback Logic
-                    if (empty($hmName) || $hmName == '......................') {
-                         if ($jenjang == 'MTS' && !empty($school->kepala_madrasah_mts)) {
-                            $hmName = $school->kepala_madrasah_mts;
-                            $hmNip = $school->nip_kepala_mts ?? $hmNip;
-                         }
-                    }
+                        // Simple Date (Masehi ONLY for DKN)
+                        $dateNow = \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
+                        $place = \App\Models\GlobalSetting::val('titimangsa_tempat_' . $key) ?? $school->kabupaten ?? $school->kota ?? 'Tempat';
+                    @endphp
 
-                    // Simple Date (Masehi ONLY for DKN)
-                    $dateNow = \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y');
-                    $place = \App\Models\GlobalSetting::val('titimangsa_tempat_' . $key) ?? $school->kabupaten ?? $school->kota ?? 'Tempat';
-                @endphp
-
-                <p class="mb-1">{{ $place }}, {{ $dateNow }}</p>
-                <p class="mb-16">{{ $hmTitle }},</p>
-                <p class="font-bold underline">{{ $hmName }}</p>
-                <p>NIP. {{ $hmNip }}</p>
-            </div>
-        </div>
+                    <p class="mb-1">{{ $place }}, {{ $dateNow }}</p>
+                    <p class="mb-16">{{ $hmTitle }},</p>
+                    <p class="font-bold underline">{{ $hmName }}</p>
+                    <p>NIP. {{ $hmNip }}</p>
+                </td>
+            </tr>
+        </table>
     </div>
 </div>
 
@@ -552,7 +555,7 @@
 
         /* Ensure Table Fonts for Print */
         table {
-            font-size: 9px !important; /* Adjusted to 9px per user request */
+            font-size: 8px !important; /* Adjusted to 9px per user request */
             font-family: Arial, sans-serif !important;
             line-height: 1; /* Tighter lines */
             border-collapse: collapse !important;
