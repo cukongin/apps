@@ -1253,6 +1253,9 @@ class SettingsController extends Controller
 
         $log = "";
 
+        // Prevent timeout during large downloads
+        set_time_limit(0);
+
         try {
             $log .= "Memulai proses Update Sistem (Mode ZIP)...\n";
 
