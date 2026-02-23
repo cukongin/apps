@@ -229,13 +229,11 @@ class IjazahController extends Controller
                 // If user submits 82.8333, we should probably round it too.
                 if ($rata !== null) $rata = round($rata, 2);
 
-                if ($rata !== null && $ujian !== null) {
-                    $nilaiIjazah = ($rata * ($bRapor/100)) + ($ujian * ($bUjian/100));
+                if ($rata !== null || $ujian !== null) {
+                    $calcRata = $rata ?? 0;
+                    $calcUjian = $ujian ?? 0;
+                    $nilaiIjazah = ($calcRata * ($bRapor/100)) + ($calcUjian * ($bUjian/100));
                     $nilaiIjazah = round($nilaiIjazah, 2);
-                } elseif ($rata !== null) {
-                    $nilaiIjazah = $rata;
-                } elseif ($ujian !== null) {
-                    $nilaiIjazah = $ujian;
                 }
 
                 NilaiIjazah::updateOrCreate(
@@ -325,14 +323,17 @@ class IjazahController extends Controller
                 );
 
                 // LOGIKA 2 & 3: PEMBOBOTAN & AKUMULASI
-                if ($entry->rata_rata_rapor !== null && $entry->nilai_ujian_madrasah !== null) {
+                if ($entry->rata_rata_rapor !== null || $entry->nilai_ujian_madrasah !== null) {
+                    $rr = $entry->rata_rata_rapor ?? 0;
+                    $um = $entry->nilai_ujian_madrasah ?? 0;
+
                     // Ambil Bobot Per Jenjang
                     $bobotRapor = \App\Models\GlobalSetting::val('ijazah_bobot_rapor_' . $jkl, 60);
                     $bobotUjian = \App\Models\GlobalSetting::val('ijazah_bobot_ujian_' . $jkl, 40);
 
-                    // Rumus: (NR x 0.6) + (Ujian x 0.4)
-                    $porsiRapor = $entry->rata_rata_rapor * ($bobotRapor/100);
-                    $porsiUjian = $entry->nilai_ujian_madrasah * ($bobotUjian/100);
+                    // Rumus: (NR x Bobot) + (Ujian x Bobot)
+                    $porsiRapor = $rr * ($bobotRapor/100);
+                    $porsiUjian = $um * ($bobotUjian/100);
 
                     $final = $porsiRapor + $porsiUjian;
 
@@ -511,8 +512,10 @@ class IjazahController extends Controller
                     $entry = \App\Models\NilaiIjazah::where('id_siswa', $siswaId)
                         ->where('id_mapel', $mapelId)->first();
 
-                    if ($entry->rata_rata_rapor !== null && $entry->nilai_ujian_madrasah !== null) {
-                         $final = ($entry->rata_rata_rapor * ($bRapor/100)) + ($entry->nilai_ujian_madrasah * ($bUjian/100));
+                    if ($entry->rata_rata_rapor !== null || $entry->nilai_ujian_madrasah !== null) {
+                         $rr = $entry->rata_rata_rapor ?? 0;
+                         $um = $entry->nilai_ujian_madrasah ?? 0;
+                         $final = ($rr * ($bRapor/100)) + ($um * ($bUjian/100));
                          $entry->nilai_ijazah = round($final, 2);
                          $entry->save();
                     }
