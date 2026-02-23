@@ -552,7 +552,7 @@
 
         /* Ensure Table Fonts for Print */
         table {
-            font-size: 8pt !important; /* Reduced from 9pt */
+            font-size: 10px !important; /* Adjusted from 8pt to 10px per user request */
             font-family: Arial, sans-serif !important;
             line-height: 1; /* Tighter lines */
             border-collapse: collapse !important;
