@@ -17,8 +17,15 @@ class DknReportService
      */
     public function getDknData(Kelas $kelas)
     {
-        // 1. Get Students
-        $students = $kelas->anggota_kelas()->with('siswa')->get();
+        // 1. Get Students (Sorted alphabetically by name)
+        $students = $kelas->anggota_kelas()
+                          ->with('siswa')
+                          ->get()
+                          ->sortBy(function($anggota) {
+                              return $anggota->siswa->nama_lengkap;
+                          })
+                          ->values(); // Reset keys after sort
+
         $studentIds = $students->pluck('id_siswa');
 
         // 2. Fetch ALL Grades needed
