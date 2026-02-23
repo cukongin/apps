@@ -1254,28 +1254,70 @@ class SettingsController extends Controller
         $log = "";
 
         try {
-            // Use Symfony Process (Safe wrapper for proc_open)
-            // exec() is disabled on Hostinger, but proc_open is active.
+            $log .= "Memulai proses Update Sistem (Mode ZIP)...\n";
 
-            // 1. Git Pull (Force Reset to Match Repo)
-            $process = \Symfony\Component\Process\Process::fromShellCommandline('git fetch origin main && git reset --hard origin/main');
-            $process->setWorkingDirectory(base_path()); // Ensure we are in project root
-            $process->run();
+            // 1. Download ZIP (Portable Update without Git)
+            $zipUrl = 'https://github.com/cukongin/apps/archive/refs/heads/main.zip';
+            $updateDir = storage_path('app/updates');
+            $zipPath = $updateDir . '/main.zip';
+            $extractPath = $updateDir . '/extract';
 
-            if (!$process->isSuccessful()) {
-                throw new \Symfony\Component\Process\Exception\ProcessFailedException($process);
+            if (!\Illuminate\Support\Facades\File::exists($updateDir)) {
+                \Illuminate\Support\Facades\File::makeDirectory($updateDir, 0755, true);
             }
 
-            $log .= "Git Output:\n" . $process->getOutput() . "\n";
+            // Clean up previous extraction just in case
+            if (\Illuminate\Support\Facades\File::exists($extractPath)) {
+                \Illuminate\Support\Facades\File::deleteDirectory($extractPath);
+            }
 
-            // 2. Clear Caches (Internal Artisan Call - Safe)
+            $log .= "Mengunduh berkas update dari Github...\n";
+            $response = \Illuminate\Support\Facades\Http::timeout(300)->withOptions([
+                'verify' => false,
+            ])->get($zipUrl);
+
+            if (!$response->successful()) {
+                throw new \Exception("Gagal mengunduh berkas update jaringan. HTTP Status: " . $response->status());
+            }
+
+            \Illuminate\Support\Facades\File::put($zipPath, $response->body());
+            $log .= "Unduhan Selesai (" . round(\Illuminate\Support\Facades\File::size($zipPath) / 1024 / 1024, 2) . " MB).\n";
+
+            // 2. Extract ZIP
+            $log .= "Mengekstrak berkas ZIP...\n";
+            $zip = new \ZipArchive;
+            if ($zip->open($zipPath) === true) {
+                $zip->extractTo($extractPath);
+                $zip->close();
+                $log .= "Ekstraksi berhasil.\n";
+            } else {
+                throw new \Exception("Gagal mengekstrak berkas ZIP update.");
+            }
+
+            // 3. Move/Copy files to base_path
+            // ZIP structure from Github is usually "repository-branch", e.g., "apps-main"
+            $sourcePath = $extractPath . '/apps-main';
+            if (\Illuminate\Support\Facades\File::exists($sourcePath)) {
+                $log .= "Menyalin file update ke sistem utama...\n";
+                // copyDirectory merges content silently (replaces existing, preserves untouched)
+                \Illuminate\Support\Facades\File::copyDirectory($sourcePath, base_path());
+                $log .= "Sistem berhasil diperbarui.\n";
+            } else {
+                throw new \Exception("Struktur folder ZIP tidak valid (Missing 'apps-main').");
+            }
+
+            // 4. Clean up temp files
+            \Illuminate\Support\Facades\File::deleteDirectory($updateDir);
+            $log .= "Pembersihan file sementara selesai.\n";
+
+            // 5. Clear Caches (Internal Artisan Call - Safe)
             \Illuminate\Support\Facades\Artisan::call('optimize:clear');
             \Illuminate\Support\Facades\Artisan::call('view:clear');
             \Illuminate\Support\Facades\Artisan::call('config:clear');
 
-            $log .= "Cache Cleared Successfully.\n";
+            $log .= "Cache tersistemasi dibersihkan.\n";
 
-            // 3. Run Migrations (Safe Mode)
+            // 6. Run Migrations (Safe Mode)
             try {
                 \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
                 $log .= "Migrate Output: " . \Illuminate\Support\Facades\Artisan::output() . "\n";
@@ -1283,9 +1325,7 @@ class SettingsController extends Controller
                 $log .= "Migrate Skipped/Error: " . $migErr->getMessage() . "\n";
             }
 
-            // 4. Run Specific Seeders (If needed)
-            // Formulas
-            // 4. Run Specific Seeders (If needed)
+            // 7. Run Specific Seeders (If needed)
             // Sync Menu Seeder (Auto-seeded on update to ensure Menu exists)
             try {
                 \Illuminate\Support\Facades\Artisan::call('db:seed', [
@@ -1297,12 +1337,12 @@ class SettingsController extends Controller
                 $log .= "Sync Seeder Skipped/Error: " . $seedErr->getMessage() . "\n";
             }
 
-            return back()->with('success', "Update Berhasil! Sistem via Git (Proc Open).\nLog:\n" . $log);
+            return back()->with('success', "Update Berhasil! Sistem via ZIP Portable.\nLog:\n" . $log);
 
         } catch (\Throwable $e) {
              // Create a detailed error log
              $errorLog = "Error: " . $e->getMessage();
-             if (method_exists($e, 'getProcess')) {
+             if (method_exists($e, 'getProcess') && $e->getProcess()) {
                  $errorLog .= "\nCommand Output: " . $e->getProcess()->getErrorOutput();
              }
 
