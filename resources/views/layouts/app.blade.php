@@ -429,29 +429,6 @@
                 @endif
             </nav>
 
-            <div class="p-4 border-t border-slate-100 dark:border-slate-800/50">
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                    <img src="{{ Auth::user()->profile_photo_url }}" alt="{{ Auth::user()->name }}" class="h-10 w-10 rounded-full object-cover shadow-sm">
-                    <div class="flex flex-col overflow-hidden flex-1">
-                        <span class="text-sm font-bold truncate">{{ Auth::user()->name ?? 'Administrator' }}</span>
-                        <span class="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {{ Auth::user()->role == 'admin' ? 'Administrator' : (Auth::user()->role == 'teacher' ? 'Guru' : (Auth::user()->role == 'walikelas' ? 'Wali Kelas' : 'User')) }}
-                        </span>
-                    </div>
-
-                    <form action="{{ route('logout') }}" method="POST"
-                          data-confirm-delete="true"
-                          data-title="Keluar Aplikasi?"
-                          data-message="Sesi Anda akan diakhiri."
-                          data-confirm-text="Ya, Keluar"
-                          data-icon="question">
-                        @csrf
-                        <button type="submit" class="p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 transition-colors" title="Logout">
-                            <span class="material-symbols-outlined text-[20px]">logout</span>
-                        </button>
-                    </form>
-                </div>
-            </div>
 
         </aside>
 
