@@ -1353,8 +1353,12 @@ class SettingsController extends Controller
                         } else {
                             // modified, added, renamed
                             // Use raw.githubusercontent to bypass API rate limits for file contents
-                            // Replace spaces with %20 explicitly, leave other characters alone to avoid malformed URL cURL errors
-                            $safeFilename = str_replace(' ', '%20', ltrim($filename, '/'));
+                            // ROBUST ENCODING: split by slash, encode each part, then rejoin.
+                            // This safely handles spaces, symbols, and non-ASCII chars without breaking the slash structure.
+                            $pathSegments = explode('/', trim($filename, '/'));
+                            $encodedSegments = array_map('rawurlencode', $pathSegments);
+                            $safeFilename = implode('/', $encodedSegments);
+
                             $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$latestSha}/" . $safeFilename;
 
                             $fileContent = \Illuminate\Support\Facades\Http::timeout(30)->withOptions(['verify' => false])->get($rawUrl);
