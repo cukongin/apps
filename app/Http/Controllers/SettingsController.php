@@ -1335,16 +1335,16 @@ class SettingsController extends Controller
                     $log .= "Memulai pengunduhan " . count($changedFiles) . " file yang berubah (Delta Update)....\n";
 
                     // Create stream context for native file_get_contents
-                    $streamContext = stream_context_create([
-                        'ssl' => [
-                            'verify_peer' => false,
-                            'verify_peer_name' => false,
-                        ],
-                        'http' => [
-                            'method' => 'GET',
-                            'header' => "User-Agent: SiApps\r\n"
-                        ]
-                    ]);
+                    // $streamContext = stream_context_create([
+                    //     'ssl' => [
+                    //         'verify_peer' => false,
+                    //         'verify_peer_name' => false,
+                    //     ],
+                    //     'http' => [
+                    //         'method' => 'GET',
+                    //         'header' => "User-Agent: SiApps\r\n"
+                    //     ]
+                    // ]);
 
                     foreach ($changedFiles as $file) {
                         $filename = $file['filename'];
@@ -1373,10 +1373,19 @@ class SettingsController extends Controller
 
                             $rawUrl = "https://raw.githubusercontent.com/{$owner}/{$repo}/{$latestSha}/" . $safeFilename;
 
-                            // Native PHP bypasses cURL malformed URL errors entirely
-                            $fileContent = @file_get_contents($rawUrl, false, $streamContext);
+                            // NATIVE CURL BYPASS for Windows Guzzle Strictness
+                            $ch = curl_init();
+                            curl_setopt($ch, CURLOPT_URL, $rawUrl);
+                            curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+                            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+                            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
+                            curl_setopt($ch, CURLOPT_USERAGENT, 'SiApps');
+                            $fileContent = curl_exec($ch);
+                            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                            curl_close($ch);
 
-                            if ($fileContent !== false) {
+                            if ($fileContent !== false && $httpCode == 200) {
                                 $dir = dirname($localPath);
                                 if (!\Illuminate\Support\Facades\File::exists($dir)) {
                                     \Illuminate\Support\Facades\File::makeDirectory($dir, 0755, true);
@@ -1384,7 +1393,7 @@ class SettingsController extends Controller
                                 \Illuminate\Support\Facades\File::put($localPath, $fileContent);
                                 $log .= "[UPDATE] $filename\n";
                             } else {
-                                $log .= "[GAGAL] Download $filename (Native Stream Error)\n";
+                                $log .= "[GAGAL] Download $filename (Native cURL Code: $httpCode)\n";
                             }
                         }
                     }
