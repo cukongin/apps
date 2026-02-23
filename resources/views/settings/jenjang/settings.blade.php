@@ -244,21 +244,6 @@
                                 </label>
                             </div>
 
-                             <!-- Graduation Rules -->
-                             <h3 class="font-bold text-slate-700 mt-8 mb-4">Aturan Kelulusan (Tingkat Akhir)</h3>
-                             <div class="bg-orange-50/50 dark:bg-orange-900/10 rounded-2xl p-6 border border-orange-100 dark:border-orange-800/30 space-y-4">
-                                <div class="grid grid-cols-2 gap-6">
-                                    <div>
-                                        <label class="text-xs font-bold text-orange-700 uppercase tracking-wide mb-2 block">Kelas Tingkat Akhir</label>
-                                        <input type="number" name="final_grade" value="{{ $settings['final_grade_' . strtolower($jenjang->kode)] ?? ($jenjang->kode == 'MI' ? 6 : 9) }}" class="input-boss" placeholder="cth: 6" {{ $isLocked ? 'disabled' : '' }}>
-                                    </div>
-                                    <div>
-                                        <label class="text-xs font-bold text-orange-700 uppercase tracking-wide mb-2 block">Rentang Kelas Ijazah</label>
-                                        <input type="text" name="ijazah_range" value="{{ $settings['ijazah_range_' . strtolower($jenjang->kode)] ?? ($jenjang->kode == 'MI' ? '4,5,6' : '7,8,9') }}" class="input-boss" placeholder="cth: 4,5,6" {{ $isLocked ? 'disabled' : '' }}>
-                                    </div>
-                                </div>
-                                <p class="text-xs text-orange-600 italic">*Rentang kelas digunakan untuk kalkulasi rata-rata nilai Ijazah.</p>
-                             </div>
                         </div>
                     </div>
 
@@ -484,9 +469,18 @@
                                                 </div>
                                             </div>
 
+                                            <div class="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Kelas Tingkat Akhir</label>
+                                                    <input type="number" name="final_grade" value="{{ $settings['final_grade_' . strtolower($jenjang->kode)] ?? ($jenjang->kode == 'MI' ? 6 : 9) }}" class="input-boss font-bold" min="1" max="12" placeholder="cth: 6" {{ $isLocked ? 'disabled' : '' }}>
+                                                </div>
+                                                <div>
+                                                    <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Rentang Kelas (Koma)</label>
+                                                    <input type="text" name="ijazah_range" value="{{ $settings['ijazah_range_' . strtolower($jenjang->kode)] ?? ($jenjang->kode == 'MI' ? '4,5,6' : '7,8,9') }}" class="input-boss font-bold" placeholder="cth: 4,5,6" {{ $isLocked ? 'disabled' : '' }}>
+                                                </div>
+                                            </div>
+
                                             <div>
-                                                <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Rentang Kelas (Pisahkan Koma)</label>
-                                                <input type="text" name="ijazah_range" value="{{ $settings['ijazah_range_' . strtolower($jenjang->kode)] ?? ($jenjang->kode == 'MI' ? '4,5,6' : '7,8,9') }}" class="input-boss font-bold" placeholder="Contoh: 4,5,6" {{ $isLocked ? 'disabled' : '' }}>
                                                 <p class="text-[10px] text-slate-500 mt-2 leading-relaxed">
                                                     Tentukan tingkat kelas mana saja yang nilainya akan diambil untuk perhitungan <strong>Rata-Rata Rapor (RR)</strong>.<br>
                                                     <span class="text-blue-600 font-bold">Info:</span> Pastikan data nilai tersedia untuk setiap periode yang dipilih.
