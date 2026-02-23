@@ -1000,7 +1000,9 @@ class WaliKelasController extends Controller
                 $kelas = Kelas::find(request('kelas_id'));
             } elseif (!$kelas) {
                 // Return Grid View directly for Admins if no class is chosen
-                $allClassesQuery = Kelas::where('id_tahun_ajaran', $activeYear->id)->orderBy('nama_kelas');
+                $allClassesQuery = Kelas::where('id_tahun_ajaran', $activeYear->id)
+                    ->whereHas('jenjang', fn($q) => $q->where('kode', '!=', 'TPQ'))
+                    ->orderBy('nama_kelas');
                 if (request('jenjang')) $allClassesQuery->whereHas('jenjang', fn($q) => $q->where('kode', request('jenjang')));
                 $allClasses = $allClassesQuery->get();
                 $years = TahunAjaran::orderBy('nama', 'desc')->get();
@@ -1551,7 +1553,9 @@ class WaliKelasController extends Controller
         // Admin Filter Data
         $allClasses = collect([]);
         if (Auth::user()->isAdmin() || Auth::user()->isTu()) {
-             $query = Kelas::where('id_tahun_ajaran', $activeYear->id);
+             $query = Kelas::where('id_tahun_ajaran', $activeYear->id)
+                ->whereHas('jenjang', fn($q) => $q->where('kode', '!=', 'TPQ'));
+
              if (request('jenjang')) {
                  $query->whereHas('jenjang', fn($q) => $q->where('kode', request('jenjang')));
              }
