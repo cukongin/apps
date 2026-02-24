@@ -196,15 +196,15 @@
                 </div>
 
                 <!-- Hidden Inputs -->
-                <input type="hidden" name="method_type" :value="staging.mode">
-                <input type="hidden" name="min_threshold" :value="staging.kkmVal">
-                <input type="hidden" name="boost_points" :value="staging.boostPoints">
-                <input type="hidden" name="max_ceiling" :value="staging.maxCeiling">
-                <input type="hidden" name="boost_percent" :value="staging.boostPercent">
-                <input type="hidden" name="target_min" :value="staging.targetMin">
-                <input type="hidden" name="target_max" :value="staging.targetMax">
-                <input type="hidden" name="data_min" :value="staging.dataMin">
-                <input type="hidden" name="data_max" :value="staging.dataMax">
+                <input type="hidden" name="method_type" :value="active.mode">
+                <input type="hidden" name="min_threshold" :value="active.kkmVal">
+                <input type="hidden" name="boost_points" :value="active.boostPoints">
+                <input type="hidden" name="max_ceiling" :value="active.maxCeiling">
+                <input type="hidden" name="boost_percent" :value="active.boostPercent">
+                <input type="hidden" name="target_min" :value="active.targetMin">
+                <input type="hidden" name="target_max" :value="active.targetMax">
+                <input type="hidden" name="data_min" :value="active.dataMin">
+                <input type="hidden" name="data_max" :value="active.dataMax">
 
                 <!-- Live Stats -->
                 <div class="space-y-3 mb-6 bg-white dark:bg-slate-700/30 rounded-xl p-4 border border-slate-100 dark:border-slate-700">

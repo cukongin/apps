@@ -2016,21 +2016,24 @@ class WaliKelasController extends Controller
                     $note = "Boost {$percent}%";
                 } elseif ($method === 'linear_scale') {
                     // Linear Interpolation
-                    $targetMin = $request->target_min;
-                    $targetMax = $request->target_max;
-                    $dataMin = $request->data_min;
-                    $dataMax = $request->data_max;
+                    $targetMin = (float) $request->target_min;
+                    $targetMax = (float) $request->target_max;
+                    $dataMin = (float) $request->data_min;
+                    $dataMax = (float) $request->data_max;
 
-                    if ($dataMax > $dataMin) {
+                    $calc = $original;
+                    if ($dataMax == $dataMin) {
+                        $calc = $targetMax;
+                    } else {
                         $ratio = ($original - $dataMin) / ($dataMax - $dataMin);
                         $range = $targetMax - $targetMin;
                         $calc = $targetMin + ($ratio * $range);
-                        $newScore = min(100, round($calc));
-                        $note = "Interpolasi ($targetMin-$targetMax)";
-
-                        // Prevent downgrade
-                        $newScore = max($newScore, $original);
                     }
+
+                    $newScore = min(100, round($calc));
+                    // Prevent downgrade
+                    $newScore = max($newScore, $original);
+                    $note = "Interpolasi ($targetMin-$targetMax)";
                 }
             }
 
