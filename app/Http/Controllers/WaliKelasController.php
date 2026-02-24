@@ -1920,8 +1920,12 @@ class WaliKelasController extends Controller
         // Active Year
         $activeYear = TahunAjaran::where('status', 'aktif')->firstOrFail();
 
-        // Periods
-        $allPeriods = Periode::where('id_tahun_ajaran', $activeYear->id)->orderBy('id')->get();
+        // Periods (Filtered by Kelas Jenjang)
+        $jenjangCode = optional($kelas->jenjang)->kode ?? ($kelas->tingkat > 6 ? 'MTS' : 'MI');
+        $allPeriods = Periode::where('id_tahun_ajaran', $activeYear->id)
+            ->where('lingkup_jenjang', $jenjangCode)
+            ->orderBy('id')->get();
+
         $selectedPeriodeId = $request->periode_id ?? ($allPeriods->where('status', 'aktif')->first()->id ?? null);
 
         // Subjects (Mapel)
